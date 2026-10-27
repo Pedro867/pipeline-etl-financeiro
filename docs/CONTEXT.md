@@ -87,3 +87,8 @@ O **produto final é o dashboard**. As decisões sobre ele (quais gráficos, qua
 |---|---|---|---|
 | 2026-10-27 | Estrutura de pastas do projeto: `data/raw/`, `data/processed/`, `docs/`, `src/` (`extract.py`, `transform.py`, `load.py`, `main.py`), `.gitignore`, `README.md` e `requirements.txt`. | Separa dados brutos dos tratados e organiza o código em um módulo por etapa do ETL, com `main.py` como ponto de entrada. | ✅ |
 | 2026-10-27 | A pasta `data/` não é versionada (está no `.gitignore`). | O volume de dados será grande demais para o repositório. O pipeline precisa criar `data/raw/` e `data/processed/` ao rodar. | ✅ |
+| 2026-10-27 | Stack: Python com **PySpark** (processamento), **requests** (chamadas HTTP) e **pytest** (testes). Dependências com versão fixa em `requirements.txt`, instaladas em um ambiente virtual `.venv`. | Escolha do responsável pelo projeto. | ✅ |
+| 2026-10-27 | Formato dos dados: **parquet**. | É o formato nativo do PySpark. | ✅ |
+| 2026-10-27 | O pipeline é executado por `src/main.py`. | Um único ponto de entrada para rodar o ETL. | ✅ |
+| 2026-10-27 | Versão do Python: **3.12.3**. | Versão do ambiente de desenvolvimento. | ✅ |
+| 2026-10-27 | Agendamento via **crontab**. | Escolha do responsável pelo projeto. | ✅ |

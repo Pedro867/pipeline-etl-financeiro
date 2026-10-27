@@ -38,6 +38,23 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 | **Dashboard** | Montar a visualização final com gráficos, indicadores e comparações escolhidos para atender a equipe comercial. |
 | **Bônus** | Atualização incremental: baixar apenas os dados novos a cada execução. |
 
+## Tecnologias
+
+- **Python 3.12.3** com **PySpark** para o processamento dos dados (requer Java instalado).
+- **requests** para as chamadas à API SGS do Banco Central.
+- **pytest** para os testes.
+- Dados armazenados em **parquet**.
+- Agendamento via **crontab**.
+
+## Como executar
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python src/main.py
+```
+
 ## Estrutura do projeto
 
 ```

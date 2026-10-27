@@ -26,11 +26,13 @@ Objetivo: entender cada indicador antes de manipulá-lo.
 Todas as decisões abaixo dependem de aprovação.
 
 - ✅ Estrutura de pastas (ver registro de decisões em [CONTEXT.md](CONTEXT.md#registro-de-decisões)).
-- 🔶 Linguagem e gerenciamento de dependências (a estrutura aprovada sugere Python com `requirements.txt`, mas isso ainda não foi confirmado).
-- 🔶 Formato da base de carga (SQLite, parquet, CSVs estruturados ou outro).
+- ✅ Linguagem e dependências: Python com PySpark, requests e pytest (`requirements.txt` + `.venv`).
+- ✅ Formato da base de carga: parquet.
 - 🔶 Modelagem dos dados (granularidade, tabelas/arquivos brutos vs. tratados).
 - 🔶 Ferramenta do dashboard (Streamlit, Power BI, Excel, HTML ou outra).
-- 🔶 Forma de execução do pipeline (manual, script único, agendamento etc.).
+- ✅ Forma de execução do pipeline: `src/main.py`.
+- ✅ Agendamento: crontab.
+  - 🔶 Frequência e horário de execução.
 
 ## Fase 2 — Extração (E) ⬜
 
