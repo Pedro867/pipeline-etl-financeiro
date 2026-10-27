@@ -25,7 +25,8 @@ Objetivo: entender cada indicador antes de manipulá-lo.
 
 Todas as decisões abaixo dependem de aprovação.
 
-- 🔶 Linguagem, estrutura de pastas e gerenciamento de dependências.
+- ✅ Estrutura de pastas (ver registro de decisões em [CONTEXT.md](CONTEXT.md#registro-de-decisões)).
+- 🔶 Linguagem e gerenciamento de dependências (a estrutura aprovada sugere Python com `requirements.txt`, mas isso ainda não foi confirmado).
 - 🔶 Formato da base de carga (SQLite, parquet, CSVs estruturados ou outro).
 - 🔶 Modelagem dos dados (granularidade, tabelas/arquivos brutos vs. tratados).
 - 🔶 Ferramenta do dashboard (Streamlit, Power BI, Excel, HTML ou outra).
@@ -50,6 +51,7 @@ Todas as decisões abaixo dependem de aprovação.
 
 ## Fase 4 — Carga (L) ⬜
 
+- ⬜ Criar `data/raw/` e `data/processed/` caso não existam (a pasta `data/` não é versionada).
 - ⬜ Salvar os dados tratados no formato aprovado na Fase 1.
 - ⬜ Garantir que a base alimenta o dashboard.
 

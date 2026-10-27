@@ -85,4 +85,5 @@ O **produto final é o dashboard**. As decisões sobre ele (quais gráficos, qua
 
 | Data | Decisão | Justificativa | Aprovado |
 |---|---|---|---|
-| — | *Nenhuma decisão tomada até o momento.* | — | — |
+| 2026-10-27 | Estrutura de pastas do projeto: `data/raw/`, `data/processed/`, `docs/`, `src/` (`extract.py`, `transform.py`, `load.py`, `main.py`), `.gitignore`, `README.md` e `requirements.txt`. | Separa dados brutos dos tratados e organiza o código em um módulo por etapa do ETL, com `main.py` como ponto de entrada. | ✅ |
+| 2026-10-27 | A pasta `data/` não é versionada (está no `.gitignore`). | O volume de dados será grande demais para o repositório. O pipeline precisa criar `data/raw/` e `data/processed/` ao rodar. | ✅ |

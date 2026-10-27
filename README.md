@@ -38,6 +38,27 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 | **Dashboard** | Montar a visualização final com gráficos, indicadores e comparações escolhidos para atender a equipe comercial. |
 | **Bônus** | Atualização incremental: baixar apenas os dados novos a cada execução. |
 
+## Estrutura do projeto
+
+```
+pipeline-etl-financeiro/
+├── data/
+│   ├── raw/            # dados brutos extraídos
+│   └── processed/      # dados tratados
+├── docs/
+│   ├── CONTEXT.md      # contexto do case e registro de decisões
+│   └── ROADMAP.md      # fases e andamento
+├── src/
+│   ├── __init__.py
+│   ├── extract.py      # extração (E)
+│   ├── transform.py    # transformação (T)
+│   ├── load.py         # carga (L)
+│   └── main.py         # ponto de entrada do pipeline
+├── .gitignore
+├── README.md
+└── requirements.txt
+```
+
 ## Documentação
 
 - [docs/CONTEXT.md](docs/CONTEXT.md): contexto do case, especificação e registro de decisões.
