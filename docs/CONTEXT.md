@@ -39,7 +39,39 @@ O **produto final é o dashboard**. As decisões sobre ele (quais gráficos, qua
 - As séries têm **frequências diferentes** (diárias e mensal) e **naturezas diferentes** (taxas, índices e cotações).
 - Os calendários também diferem: dias úteis do BCB vs. pregões da B3 (feriados podem não coincidir).
 - Como conciliar isso no tratamento e no dashboard **faz parte das decisões a serem tomadas** (pendente de aprovação).
-- Os códigos das séries no SGS precisam ser **pesquisados e confirmados** no site do SGS (Sistema Gerenciador de Séries Temporais).
+### API SGS (Banco Central)
+
+URL de consulta:
+
+```
+https://api.bcb.gov.br/dados/serie/bcdata.sgs.{CODE}/dados?formato=json&dataInicial={dd/mm/aaaa}&dataFinal={dd/mm/aaaa}
+```
+
+| Série | Código SGS | O que a API retorna (amostra de set/2026) |
+|---|---|---|
+| CDI | `12` | Taxa **diária** em % ao dia (ex.: `0.051660`), só em dias úteis. |
+| IPCA | `433` | **Variação mensal** em % (ex.: `0.82`), não o número-índice. Um registro por mês, datado no dia 1. |
+| Dólar PTAX venda | `1` | Cotação em R$/US$ (ex.: `5.1570`), só em dias úteis. |
+
+Formato de retorno: lista JSON de `{"data": "dd/mm/aaaa", "valor": "<texto>"}`. Tanto a data quanto o valor vêm como **texto**.
+
+**Período de coleta:** a data final é o dia atual da execução e a data inicial é a mesma data 5 anos antes. Se o dia atual for 29/02, a data inicial é 28/02.
+
+### yfinance (Ibovespa)
+
+Chamada usada para explorar a fonte: `yf.download("^BVSP", start=..., end=..., auto_adjust=False)`. Ela retorna um **DataFrame do pandas** (o pandas vem como dependência do yfinance).
+
+| Aspecto | O que a consulta mostrou (out/2026) |
+|---|---|
+| Colunas | `Adj Close`, `Close`, `High`, `Low`, `Open`, `Volume`, como **MultiIndex** (preço × ticker), mesmo com um ticker só. |
+| Índice | `Date` (`datetime64`, sem fuso), só em dias de pregão. |
+| Tipos | Preços em `float64` (pontos do índice) e `Volume` em `int64`. |
+| `Adj Close` vs `Close` | Iguais no `^BVSP` (índice não tem dividendos nem desdobramentos). |
+| `end` | É **exclusivo**: para incluir o dia D, é preciso passar D+1. |
+| Dia corrente | Se o pregão do dia ainda não fechou, vem uma linha **parcial**: valores intradiários que ainda mudam e `Volume = 0`. |
+| Avisos | O yfinance 1.7.0 emite `Pandas4Warning` (uso de `inplace`). Não afeta os dados. |
+
+**Ponto a verificar:** entre 23/10/2026 (205.083) e 26/10/2026 (176.608), o `Close` cai cerca de 14% em um dia, e o `Volume` de 26/10 é cerca de 4 vezes o normal. Pode ser um evento real de mercado ou um erro da fonte; isso precisa ser confirmado antes de usar o dado.
 
 ---
 
@@ -89,6 +121,10 @@ O **produto final é o dashboard**. As decisões sobre ele (quais gráficos, qua
 | 2026-10-27 | A pasta `data/` não é versionada (está no `.gitignore`). | O volume de dados será grande demais para o repositório. O pipeline precisa criar `data/raw/` e `data/processed/` ao rodar. | ✅ |
 | 2026-10-27 | Stack: Python com **PySpark** (processamento), **requests** (chamadas HTTP) e **pytest** (testes). Dependências com versão fixa em `requirements.txt`, instaladas em um ambiente virtual `.venv`. | Escolha do responsável pelo projeto. | ✅ |
 | 2026-10-27 | Formato dos dados: **parquet**. | É o formato nativo do PySpark. | ✅ |
-| 2026-10-27 | O pipeline é executado por `src/main.py`. | Um único ponto de entrada para rodar o ETL. | ✅ |
+| 2026-10-27 | O pipeline é executado por `src/main.py`, com o comando `python -m src.main` a partir da raiz do projeto. Os imports usam o pacote `src` (ex.: `from src.extract import ...`). | Um único ponto de entrada para rodar o ETL. O `-m` trata `src/` como pacote, o que deixa os imports iguais no `main.py` e nos testes com pytest. | ✅ |
 | 2026-10-27 | Versão do Python: **3.12.3**. | Versão do ambiente de desenvolvimento. | ✅ |
 | 2026-10-27 | Agendamento via **crontab**. | Escolha do responsável pelo projeto. | ✅ |
+| 2026-10-27 | Códigos SGS: CDI = `12`, IPCA = `433`, Dólar PTAX venda = `1`. | Pesquisados no SGS e confirmados com uma consulta à API. | ✅ |
+| 2026-10-27 | Período de extração: da data atual menos 5 anos até a data atual. Se o dia atual for 29/02, a data inicial é 28/02. | O case pede os últimos 5 anos. | ✅ |
+| 2026-10-27 | Adicionar **yfinance** às dependências. | O case pede essa biblioteca para o Ibovespa. | ✅ |
+| 2026-10-27 | O crontab só será configurado quando todo o ETL estiver pronto. | Escolha do responsável pelo projeto. | ✅ |

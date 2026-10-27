@@ -42,6 +42,7 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 
 - **Python 3.12.3** com **PySpark** para o processamento dos dados (requer Java instalado).
 - **requests** para as chamadas à API SGS do Banco Central.
+- **yfinance** para a cotação do Ibovespa.
 - **pytest** para os testes.
 - Dados armazenados em **parquet**.
 - Agendamento via **crontab**.
@@ -52,7 +53,7 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python src/main.py
+python -m src.main   # a partir da raiz do projeto
 ```
 
 ## Estrutura do projeto

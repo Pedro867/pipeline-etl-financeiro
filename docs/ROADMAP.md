@@ -17,7 +17,12 @@ Objetivo: entender cada indicador antes de manipulá-lo.
   - ⬜ IPCA
   - ⬜ Dólar PTAX venda
   - ⬜ Ibovespa
-- ⬜ Pesquisar e confirmar os códigos das séries no SGS (CDI, IPCA, PTAX venda).
+- ✅ Pesquisar e confirmar os códigos das séries no SGS: CDI = 12, IPCA = 433, PTAX venda = 1.
+- ✅ Definir o período de extração: data atual menos 5 anos até a data atual.
+  - ✅ Se o dia atual for 29/02, a data inicial é 28/02.
+- ✅ Explorar o retorno do `yfinance` para o `^BVSP` (ver [CONTEXT.md](CONTEXT.md#yfinance-ibovespa)).
+  - 🔶 Tratamento da linha parcial do pregão em andamento.
+  - ⬜ Verificar a queda de cerca de 14% do Ibovespa em 26/10/2026 (evento real ou erro da fonte).
 - ⬜ Verificar o formato de retorno, unidades e limitações das fontes (API SGS e `yfinance`).
 - ⬜ Mapear diferenças de calendário entre as séries (dias úteis BCB, pregões B3, divulgação mensal do IPCA).
 
@@ -30,9 +35,9 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Formato da base de carga: parquet.
 - 🔶 Modelagem dos dados (granularidade, tabelas/arquivos brutos vs. tratados).
 - 🔶 Ferramenta do dashboard (Streamlit, Power BI, Excel, HTML ou outra).
-- ✅ Forma de execução do pipeline: `src/main.py`.
+- ✅ Forma de execução do pipeline: `python -m src.main`, a partir da raiz do projeto.
 - ✅ Agendamento: crontab.
-  - 🔶 Frequência e horário de execução.
+  - ⬜ Configurar o crontab (frequência e horário) depois que todo o ETL estiver pronto.
 
 ## Fase 2 — Extração (E) ⬜
 
