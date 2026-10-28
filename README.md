@@ -53,7 +53,8 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m src.main   # a partir da raiz do projeto
+python -m src.main_daily     # séries diárias (CDI, PTAX, Ibovespa), a partir da raiz do projeto
+python -m src.main_monthly   # série mensal (IPCA), a partir da raiz do projeto
 ```
 
 ## Estrutura do projeto
@@ -71,7 +72,9 @@ pipeline-etl-financeiro/
 │   ├── extract.py      # extração (E)
 │   ├── transform.py    # transformação (T)
 │   ├── load.py         # carga (L)
-│   └── main.py         # ponto de entrada do pipeline
+│   ├── utils.py        # funções auxiliares (ex.: salvar arquivos)
+│   ├── main_daily.py   # ponto de entrada: séries diárias
+│   └── main_monthly.py # ponto de entrada: série mensal (IPCA)
 ├── .gitignore
 ├── README.md
 └── requirements.txt

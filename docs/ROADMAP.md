@@ -35,18 +35,24 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Formato da base de carga: parquet.
 - 🔶 Modelagem dos dados (granularidade, tabelas/arquivos brutos vs. tratados).
 - 🔶 Ferramenta do dashboard (Streamlit, Power BI, Excel, HTML ou outra).
-- ✅ Forma de execução do pipeline: `python -m src.main`, a partir da raiz do projeto.
+- ✅ Forma de execução do pipeline, a partir da raiz do projeto: `python -m src.main_daily` (séries diárias) e `python -m src.main_monthly` (IPCA).
 - ✅ Agendamento: crontab.
   - ⬜ Configurar o crontab (frequência e horário) depois que todo o ETL estiver pronto.
 
 ## Fase 2 — Extração (E) ⬜
 
-- ⬜ Coletar CDI via API SGS (últimos 5 anos).
-- ⬜ Coletar IPCA via API SGS (últimos 5 anos).
-- ⬜ Coletar Dólar PTAX venda via API SGS (últimos 5 anos).
-- ⬜ Coletar Ibovespa via `yfinance` (`^BVSP`, últimos 5 anos).
+- ⬜ Implementar `fetch_sgs` em `src/extract.py` (genérica, recebe o código SGS e o período).
+- ⬜ Implementar `fetch_yfinance` em `src/extract.py` (chama a conversão do `utils.py` e retorna JSON, como o `fetch_sgs`).
+- ⬜ Implementar em `src/utils.py`:
+  - ⬜ a função que converte o DataFrame do yfinance para JSON;
+  - ⬜ a função que salva o JSON em `data/raw/<serie>/<serie>_YYYYMMDD.json`.
+- ⬜ Carga completa (5 anos) na primeira execução e incremental nas seguintes: do dia seguinte ao último arquivo salvo até hoje.
+- ⬜ Coletar CDI, PTAX venda e Ibovespa (séries diárias) via `src/main_daily.py`.
+- ⬜ Coletar IPCA (série mensal) via `src/main_monthly.py`.
+- ⬜ Se a série for executada de novo no mesmo dia, sobrescrever o arquivo do dia. Na reexecução, a data inicial é calculada pelo último arquivo **anterior** a hoje; caso contrário, ela cairia em amanhã e a busca viria vazia.
+- 🔶 Horário de execução: CDI, PTAX e o fechamento do Ibovespa são divulgados em horários diferentes.
+- ⬜ Verificar o que a API SGS retorna quando o período pedido não tem dado (ex.: feriado).
 - 🔶 Tratamento de erros e retentativas nas chamadas às fontes.
-- 🔶 Se e como persistir os dados brutos antes da transformação.
 
 ## Fase 3 — Transformação (T) ⬜
 

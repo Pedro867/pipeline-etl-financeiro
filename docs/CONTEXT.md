@@ -128,3 +128,15 @@ Chamada usada para explorar a fonte: `yf.download("^BVSP", start=..., end=..., a
 | 2026-10-27 | Período de extração: da data atual menos 5 anos até a data atual. Se o dia atual for 29/02, a data inicial é 28/02. | O case pede os últimos 5 anos. | ✅ |
 | 2026-10-27 | Adicionar **yfinance** às dependências. | O case pede essa biblioteca para o Ibovespa. | ✅ |
 | 2026-10-27 | O crontab só será configurado quando todo o ETL estiver pronto. | Escolha do responsável pelo projeto. | ✅ |
+| 2026-10-28 | Extração com uma função por fonte: `fetch_sgs` (genérica, recebe o código SGS) e `fetch_yfinance`. | Nomes padronizados. As três séries do BCB usam a mesma API. | ✅ |
+| 2026-10-28 | A função que salva os arquivos fica em `src/utils.py` (arquivo novo na estrutura). | Separa a gravação da busca, o que permite testar a busca sem gravar arquivo. | ✅ |
+| 2026-10-28 | A conversão do retorno do `fetch_yfinance` (DataFrame) para JSON fica em `src/utils.py`. O `fetch_yfinance` chama essa conversão e já retorna JSON. | Funções auxiliares ficam concentradas em `utils.py`, e as duas buscas (`fetch_sgs` e `fetch_yfinance`) retornam o mesmo tipo, então os pontos de entrada tratam todas as séries do mesmo jeito. | ✅ |
+| 2026-10-28 | Camada bronze (`data/raw`): um arquivo por execução, com uma subpasta por série: `data/raw/<serie>/<serie>_YYYYMMDD.json`, onde `YYYYMMDD` é a **data da ingestão**. | Arquivos imutáveis, só acrescentados, guardam o histórico do que foi baixado e permitem a carga incremental. | ✅ |
+| 2026-10-28 | Carga completa (5 anos) na primeira execução e incremental nas seguintes. | Atende o bônus de atualização incremental. | ✅ |
+| 2026-10-28 | O JSON é salvo como a fonte retorna, sem metadados. O retorno do yfinance (DataFrame) é convertido para JSON. | Todas as séries chegam à camada silver no mesmo formato. | ✅ |
+| 2026-10-28 | As séries diárias (CDI, PTAX, Ibovespa) rodam em um fluxo, uma vez por dia. O IPCA (mensal) roda em um fluxo separado. | As frequências de publicação são diferentes. | ✅ |
+| 2026-10-28 | Data inicial da carga incremental: o dia seguinte ao último arquivo salvo da série (até a data atual). | Em um dia normal é só o dia atual, e se uma execução falhar os dias perdidos entram automaticamente na seguinte. | ✅ |
+| 2026-10-28 | O fluxo mensal (IPCA) tem um script de entrada próprio, `src/main_monthly.py`, executado com `python -m src.main_monthly`. O `src/main.py` fica com as séries diárias. | Facilita o agendamento separado no crontab. | ✅ |
+| 2026-10-28 | `src/main.py` renomeado para `src/main_daily.py` (executado com `python -m src.main_daily`). Substitui o `main.py` das decisões anteriores. | Nomes simétricos para os dois pontos de entrada (`main_daily` e `main_monthly`). | ✅ |
+| 2026-10-28 | Se uma série for executada mais de uma vez no mesmo dia, o arquivo do dia é sobrescrito. | Escolha do responsável pelo projeto. | ✅ |
+| 2026-10-28 | A carga incremental não refaz dias anteriores para pegar correções. A defasagem do IPCA é resolvida pelo agendamento do crontab. | Simplicidade. | ✅ |
