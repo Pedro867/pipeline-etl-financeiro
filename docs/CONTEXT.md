@@ -55,6 +55,42 @@ https://api.bcb.gov.br/dados/serie/bcdata.sgs.{CODE}/dados?formato=json&dataInic
 
 Formato de retorno: lista JSON de `{"data": "dd/mm/aaaa", "valor": "<texto>"}`. Tanto a data quanto o valor vêm como **texto**.
 
+**Período sem dado** (ex.: feriado de 07/09/2026, ou fim de semana + feriado de 05/09 a 07/09): a API responde **HTTP 404**, com o corpo abaixo, e não uma lista vazia `[]`. Com dado, a resposta é HTTP 200.
+
+```json
+{"erro": {"statusCode": 404, "detail": "br.gov.bcb.pec.sgs.comum.excecoes.SGSNegocioException: Value(s) not found"}}
+```
+
+Por isso, um `raise_for_status()` do `requests` trataria "sem dado" como erro. Para diferenciar, o código precisa verificar o 404 junto com o texto `Value(s) not found`.
+
+### Mapa de erros das fontes
+
+Levantado com testes nas fontes em 28/10/2026. A coluna "Retentar?" foi aprovada em 28/10/2026 (ver registro de decisões).
+
+**API SGS (`requests`)**
+
+| Situação | Resposta observada | Retentar? |
+|---|---|---|
+| Sucesso | HTTP 200, lista JSON | — |
+| Período sem dado (feriado, fim de semana) | HTTP 404, `Value(s) not found` | Não é erro (decidido: não salva arquivo) |
+| Data em formato inválido | HTTP 400, `Invalid initial date` | Não: é erro no código |
+| Janela maior que 10 anos (série diária) | HTTP 406, "janela de consulta de, no máximo, 10 anos" | Não: é erro no código (os 5 anos estão dentro do limite) |
+| Código de série inexistente | ⚠️ **HTTP 200** com uma **página HTML** ("Requisição inválida!"), depois de cerca de 30 s | Não: é erro de configuração. O status 200 sozinho não basta; é preciso validar o `Content-Type` ou se o corpo é JSON. |
+| Timeout ou falha de conexão (`requests.Timeout`, `ConnectionError`) | Não observado (esperado em instabilidade) | Sim |
+| Erro do servidor (HTTP 5xx) ou excesso de requisições (429) | Não observado (esperado em instabilidade) | Sim |
+| Corpo que não é JSON, ou JSON fora do formato `[{"data", "valor"}]` | Não observado | A definir |
+
+**yfinance**
+
+| Situação | `yf.download(...)` | `yf.Ticker(...).history(..., raise_errors=True)` | Retentar? |
+|---|---|---|---|
+| Ticker inválido | ⚠️ **Não lança exceção**: retorna DataFrame vazio e só imprime o erro no terminal | `YFTzMissingError` | Não: é erro de configuração |
+| Período sem pregão (fim de semana, feriado) | ⚠️ **Não lança exceção**: retorna DataFrame vazio | `YFPricesMissingError` | Não é erro (equivale ao 404 do SGS) |
+| Limite de requisições do Yahoo | — | `YFRateLimitError` | Sim |
+| Timeout ou falha de conexão | — | Erro de rede | Sim |
+
+Com o `yf.download`, um ticker inválido e um período sem pregão dão o **mesmo resultado** (DataFrame vazio), e o pipeline não teria como diferenciar os dois casos. Com o `Ticker.history(raise_errors=True)`, cada caso gera uma exceção diferente.
+
 **Período de coleta:** a data final é o dia atual da execução e a data inicial é a mesma data 5 anos antes. Se o dia atual for 29/02, a data inicial é 28/02.
 
 ### yfinance (Ibovespa)
@@ -71,7 +107,21 @@ Chamada usada para explorar a fonte: `yf.download("^BVSP", start=..., end=..., a
 | Dia corrente | Se o pregão do dia ainda não fechou, vem uma linha **parcial**: valores intradiários que ainda mudam e `Volume = 0`. |
 | Avisos | O yfinance 1.7.0 emite `Pandas4Warning` (uso de `inplace`). Não afeta os dados. |
 
-**Ponto a verificar:** entre 23/10/2026 (205.083) e 26/10/2026 (176.608), o `Close` cai cerca de 14% em um dia, e o `Volume` de 26/10 é cerca de 4 vezes o normal. Pode ser um evento real de mercado ou um erro da fonte; isso precisa ser confirmado antes de usar o dado.
+**Fuso horário:** o `Ticker.history` (a função adotada) devolve o índice **com fuso** (`America/Sao_Paulo` no `^BVSP`), diferente do `yf.download`, que devolve sem fuso. Na conversão para JSON, isso precisa ser levado em conta para a data não mudar.
+
+**Queda de 26/10/2026, verificada em 28/10/2026:** o `Close` cai de 205.083 (23/10) para 176.608 (−13,88%). Cruzando com fontes independentes, a conclusão é que se trata de um **evento real de mercado**, e não de um erro da fonte:
+
+| Fonte | Variação em 26/10 |
+|---|---|
+| `^BVSP` (Ibovespa) | −13,88% |
+| BOVA11 (ETF do Ibovespa na B3) | −14,51% |
+| EWZ (ETF de Brasil na bolsa de Nova York, outra bolsa) | −19,82% |
+| ITUB4 / PETR4 | −13,66% / −8,18% |
+| **PTAX venda (SGS 1, Banco Central)** | **+9,19%** (5,0377 → 5,5007) |
+
+No intradiário de 30 em 30 minutos, a queda acontece toda na **abertura**: o índice vai de 205.070 a 169.516 nos primeiros 30 min e depois recupera parte. É o comportamento típico de um choque ocorrido no fim de semana. A causa não foi investigada.
+
+Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um dia depois da PTAX oficial, provavelmente pelo fuso de Londres. Ele não é usado no pipeline, mas mostra que datas de fontes diferentes podem estar defasadas.
 
 ---
 
@@ -139,4 +189,11 @@ Chamada usada para explorar a fonte: `yf.download("^BVSP", start=..., end=..., a
 | 2026-10-28 | O fluxo mensal (IPCA) tem um script de entrada próprio, `src/main_monthly.py`, executado com `python -m src.main_monthly`. O `src/main.py` fica com as séries diárias. | Facilita o agendamento separado no crontab. | ✅ |
 | 2026-10-28 | `src/main.py` renomeado para `src/main_daily.py` (executado com `python -m src.main_daily`). Substitui o `main.py` das decisões anteriores. | Nomes simétricos para os dois pontos de entrada (`main_daily` e `main_monthly`). | ✅ |
 | 2026-10-28 | Se uma série for executada mais de uma vez no mesmo dia, o arquivo do dia é sobrescrito. | Escolha do responsável pelo projeto. | ✅ |
+| 2026-10-28 | Quando a fonte não tem dado para o período pedido (no SGS, HTTP 404 com `Value(s) not found`), nenhum arquivo é salvo e a execução segue normalmente. Cada execução faz uma única requisição por série. | Salvar `[]` faria a data inicial da próxima carga avançar, e um dia ainda não publicado seria perdido para sempre. Sem arquivo, o mesmo dia é pedido de novo na próxima execução. | ✅ |
+| 2026-10-28 | Retentativa nas chamadas às fontes: **1 tentativa + 2 retentativas** (3 no total), com **intervalo fixo de 10 s** e **timeout de 60 s** por requisição. | Absorve instabilidades passageiras sem insistir demais. O timeout de 60 s deixa chegar a resposta de código SGS inexistente (cerca de 30 s), que assim é classificada como erro de configuração, e não como timeout. | ✅ |
+| 2026-10-28 | Só os erros passageiros são retentados (timeout, falha de conexão, HTTP 5xx ou 429, `YFRateLimitError`). Erro de código ou de configuração não é retentado. "Sem dado" não é erro. | Tentar de novo um erro de código ou de configuração dá sempre o mesmo resultado. | ✅ |
+| 2026-10-28 | Se todas as tentativas de uma série falharem, o erro é registrado em log e o fluxo segue para as outras séries. Os logs ficam em `log/` na raiz do projeto, fora do Git (`.gitignore`), com **um arquivo por execução**: `log/<fluxo>_YYYYMMDD_HHMMSS.log`, onde `<fluxo>` é `daily` ou `monthly` e a data e a hora são as do início da execução. O arquivo só é criado quando há erro. Cada linha registra a hora do erro e a série. | Uma fonte fora do ar não impede a coleta das outras. A série que falhou é pedida de novo na próxima execução, porque nenhum arquivo foi salvo. | ✅ |
+| 2026-10-28 | No yfinance, usar `yf.Ticker(...).history(..., raise_errors=True)` no lugar de `yf.download`. | O `yf.download` não lança exceção e não diferencia ticker inválido de período sem pregão. | ✅ |
+| 2026-10-28 | O fluxo diário é agendado para **depois do fechamento do pregão** da B3. O horário exato fica para a configuração do crontab. | Evita salvar a linha parcial do pregão em andamento do Ibovespa. Por enquanto não há proteção extra contra execução manual durante o pregão: nesse caso, a linha parcial é salva e só é corrigida se o fluxo rodar de novo no mesmo dia, depois do fechamento (o arquivo do dia é sobrescrito). | ✅ |
+| 2026-10-28 | A queda de cerca de 14% do Ibovespa em 26/10/2026 é tratada como dado válido. | Foi confirmada por fontes independentes (BOVA11, EWZ, ações da carteira e a PTAX oficial). | ✅ |
 | 2026-10-28 | A carga incremental não refaz dias anteriores para pegar correções. A defasagem do IPCA é resolvida pelo agendamento do crontab. | Simplicidade. | ✅ |

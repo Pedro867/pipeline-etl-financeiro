@@ -75,6 +75,7 @@ pipeline-etl-financeiro/
 │   ├── utils.py        # funções auxiliares (ex.: salvar arquivos)
 │   ├── main_daily.py   # ponto de entrada: séries diárias
 │   └── main_monthly.py # ponto de entrada: série mensal (IPCA)
+├── log/                # logs de erro (fora do Git, criada pelo pipeline)
 ├── .gitignore
 ├── README.md
 └── requirements.txt

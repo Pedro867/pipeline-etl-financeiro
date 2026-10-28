@@ -21,8 +21,10 @@ Objetivo: entender cada indicador antes de manipulá-lo.
 - ✅ Definir o período de extração: data atual menos 5 anos até a data atual.
   - ✅ Se o dia atual for 29/02, a data inicial é 28/02.
 - ✅ Explorar o retorno do `yfinance` para o `^BVSP` (ver [CONTEXT.md](CONTEXT.md#yfinance-ibovespa)).
-  - 🔶 Tratamento da linha parcial do pregão em andamento.
-  - ⬜ Verificar a queda de cerca de 14% do Ibovespa em 26/10/2026 (evento real ou erro da fonte).
+  - ✅ Linha parcial do pregão em andamento: o fluxo diário roda depois do fechamento do pregão.
+    - ✅ Sem proteção extra por enquanto: basta o agendamento. Uma execução manual durante o pregão salva a linha parcial, que só é corrigida se o fluxo rodar de novo no mesmo dia, depois do fechamento.
+  - ✅ Verificar a queda de cerca de 14% do Ibovespa em 26/10/2026: é um evento real, confirmado por fontes independentes.
+  - ⬜ Na conversão para JSON, considerar o fuso horário do índice do `Ticker.history`.
 - ⬜ Verificar o formato de retorno, unidades e limitações das fontes (API SGS e `yfinance`).
 - ⬜ Mapear diferenças de calendário entre as séries (dias úteis BCB, pregões B3, divulgação mensal do IPCA).
 
@@ -51,8 +53,19 @@ Todas as decisões abaixo dependem de aprovação.
 - ⬜ Coletar IPCA (série mensal) via `src/main_monthly.py`.
 - ⬜ Se a série for executada de novo no mesmo dia, sobrescrever o arquivo do dia. Na reexecução, a data inicial é calculada pelo último arquivo **anterior** a hoje; caso contrário, ela cairia em amanhã e a busca viria vazia.
 - 🔶 Horário de execução: CDI, PTAX e o fechamento do Ibovespa são divulgados em horários diferentes.
-- ⬜ Verificar o que a API SGS retorna quando o período pedido não tem dado (ex.: feriado).
-- 🔶 Tratamento de erros e retentativas nas chamadas às fontes.
+- ✅ Verificar o que a API SGS retorna quando o período pedido não tem dado (ex.: feriado): **HTTP 404** com `"Value(s) not found"` (ver [CONTEXT.md](CONTEXT.md#api-sgs-banco-central)).
+  - ✅ Quando não há dado, nenhum arquivo é salvo. A próxima execução pede de novo a partir do mesmo ponto.
+- ✅ Tratamento de erros e retentativas nas chamadas às fontes (ver [CONTEXT.md](CONTEXT.md#mapa-de-erros-das-fontes)).
+  - ✅ Mapear os tipos de erro de cada fonte.
+  - ✅ 1 tentativa + 2 retentativas (3 tentativas no total), com intervalo fixo de 10 s.
+  - ✅ Timeout de 60 s por requisição.
+  - ✅ Retentar só os erros passageiros (coluna "Retentar?" do mapa).
+  - ✅ Se todas as tentativas falharem, registrar o erro em log e seguir para as outras séries.
+  - ✅ Usar `yf.Ticker(...).history(..., raise_errors=True)` no yfinance.
+- ⬜ Registrar os erros em arquivos de log na pasta `log/` da raiz do projeto (fora do Git), criada pelo pipeline se não existir.
+  - ✅ Um arquivo por execução, com a data e a hora do início no nome. Cada linha traz a hora do erro e a série.
+  - ✅ Nome com o fluxo: `log/daily_YYYYMMDD_HHMMSS.log` e `log/monthly_YYYYMMDD_HHMMSS.log`.
+  - ✅ O arquivo só é criado quando a execução tem erro.
 
 ## Fase 3 — Transformação (T) ⬜
 
