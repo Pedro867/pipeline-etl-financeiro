@@ -12,6 +12,8 @@
 
 Objetivo: entender cada indicador antes de manipulá-lo.
 
+> ⏸️ **Adiada:** os itens pendentes desta fase serão retomados quando a camada silver estiver pronta (decisão de 28/10/2026).
+
 - ⬜ Estudar cada série: significado, forma de cálculo, uso no dia a dia de um assessor de investimentos e formas usuais de apresentação.
   - ⬜ CDI
   - ⬜ IPCA
