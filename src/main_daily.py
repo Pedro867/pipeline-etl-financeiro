@@ -3,6 +3,7 @@
 from functools import partial
 
 from src.extract import fetch_sgs, fetch_yfinance, run_extraction
+from src.transform import run_transformation
 
 SERIES = {
     "cdi": partial(fetch_sgs, 12),
@@ -12,3 +13,4 @@ SERIES = {
 
 if __name__ == "__main__":
     run_extraction("daily", SERIES)
+    run_transformation()

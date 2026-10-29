@@ -229,6 +229,31 @@ def test_other_files_in_bronze_folder_are_ignored():
     assert len(transform.build_silver()["cdi"]) == 1
 
 
+# run_transformation (etapa do pipeline)
+
+def test_run_transformation_builds_silver():
+    full_bronze()
+
+    transform.run_transformation()
+
+    assert len(list(utils.SILVER_DIR.iterdir())) == 4
+
+
+def test_run_transformation_logs_failure_without_raising(monkeypatch, log_dir, caplog):
+    from datetime import datetime
+
+    def broken():
+        raise OSError("disco cheio")
+
+    monkeypatch.setattr(transform, "build_silver", broken)
+    utils.configure_logging("daily", datetime(2026, 10, 29, 9, 0, 0))
+
+    transform.run_transformation()  # não levanta exceção
+
+    content = (log_dir / "daily_20261029_090000.log").read_text(encoding="utf-8")
+    assert "transformação: falha na silver (OSError: disco cheio)" in content
+
+
 # Recalculada a cada execução
 
 def test_rebuild_overwrites_previous_silver():

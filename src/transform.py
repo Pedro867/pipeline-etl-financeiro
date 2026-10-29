@@ -109,3 +109,14 @@ def build_silver() -> dict[str, pd.DataFrame]:
         _save_parquet(tables[serie], utils.SILVER_DIR, serie)
         logger.info("%s: silver com %d linhas", serie, len(tables[serie]))
     return tables
+
+
+def run_transformation() -> None:
+    """Etapa de transformação do pipeline, chamada no fim dos fluxos de ingestão.
+
+    Uma falha é registrada no log da execução, sem afetar a bronze já gravada.
+    """
+    try:
+        build_silver()
+    except Exception as error:
+        logger.error("transformação: falha na silver (%s: %s)", type(error).__name__, error)

@@ -58,6 +58,8 @@ python -m src.main_daily     # séries diárias (CDI, PTAX, Ibovespa), a partir 
 python -m src.main_monthly   # série mensal (IPCA), a partir da raiz do projeto
 ```
 
+Cada fluxo faz a extração (bronze) e, em seguida, recalcula a camada silver em `data/processed/silver/`.
+
 ## Agendamento
 
 As execuções são agendadas com o `crontab`, no horário local da máquina (`America/Sao_Paulo`):
