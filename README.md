@@ -58,6 +58,28 @@ python -m src.main_daily     # séries diárias (CDI, PTAX, Ibovespa), a partir 
 python -m src.main_monthly   # série mensal (IPCA), a partir da raiz do projeto
 ```
 
+## Agendamento
+
+As execuções são agendadas com o `crontab`, no horário local da máquina (`America/Sao_Paulo`):
+
+| Fluxo | Quando | Por quê |
+|---|---|---|
+| Diário (CDI, PTAX, Ibovespa) | Todos os dias, às 09:00 | Antes da abertura da B3, com todas as séries em D-1: o CDI sai em D+1, e o Ibovespa é buscado só até o dia anterior, já consolidado. Nos fins de semana a execução não encontra dado novo e não salva arquivo. |
+| Mensal (IPCA) | Dias 8 a 20, às 10:00 | O IBGE divulga o IPCA por volta do dia 10, às 9h, mas o dia exato muda de mês para mês. Antes da divulgação, a execução não encontra dado e não salva arquivo; depois, entra no máximo 1 dia após a divulgação. |
+
+Linhas do crontab (`crontab -e`), trocando `<caminho-do-projeto>` pelo caminho absoluto do projeto:
+
+```cron
+# Pipeline de indicadores: fluxo diário (CDI, PTAX, Ibovespa)
+0 9 * * * cd <caminho-do-projeto> && .venv/bin/python -m src.main_daily > /dev/null 2>&1
+# Pipeline de indicadores: fluxo mensal (IPCA)
+0 10 8-20 * * cd <caminho-do-projeto> && .venv/bin/python -m src.main_monthly > /dev/null 2>&1
+# Pipeline de indicadores: roda os dois fluxos ao ligar a máquina (espera 2 min pela internet)
+@reboot sleep 120; cd <caminho-do-projeto> && .venv/bin/python -m src.main_daily > /dev/null 2>&1; .venv/bin/python -m src.main_monthly > /dev/null 2>&1
+```
+
+A saída do terminal é descartada. Os erros de extração ficam em `log/<fluxo>_YYYYMMDD_HHMMSS.log`. Se a máquina estiver desligada no horário, o cron não roda a execução depois. Por isso, a linha `@reboot` roda os dois fluxos sempre que a máquina liga, e a carga incremental busca os dias perdidos. O `@reboot` **não** roda ao voltar da suspensão (tampa fechada); nesse caso, os dados são atualizados na próxima execução agendada ou na próxima vez que a máquina for ligada.
+
 ## Testes
 
 ```bash

@@ -41,9 +41,13 @@ Todas as decisões abaixo dependem de aprovação.
 - 🔶 Ferramenta do dashboard (Streamlit, Power BI, Excel, HTML ou outra).
 - ✅ Forma de execução do pipeline, a partir da raiz do projeto: `python -m src.main_daily` (séries diárias) e `python -m src.main_monthly` (IPCA).
 - ✅ Agendamento: crontab.
-  - ⬜ Configurar o crontab (frequência e horário) depois que todo o ETL estiver pronto.
+  - ✅ Frequência e horário definidos (ver [README](../README.md#agendamento)): fluxo diário todos os dias às 09:00 e fluxo mensal nos dias 8 a 20, às 10:00.
+  - ✅ Linhas instaladas no crontab da máquina em 28/10/2026, antecipando a decisão de instalar só com o ETL pronto. Execução de teste às 21:56 bem-sucedida.
+  - ✅ Linha de teste (`56 21 * * *`) removida do crontab.
+  - ✅ Execução ao ligar a máquina (`@reboot`, 2 min de espera), para não depender de a máquina estar ligada às 09:00.
+  - ⬜ Nos primeiros dias, conferir nos arquivos se a execução das 09:00 já traz o CDI de D-1 e o Ibovespa de D-1 consolidado.
 
-## Fase 2 — Extração (E) 🔄
+## Fase 2 — Extração (E) ✅
 
 - ✅ `fetch_sgs` em `src/extract.py` (genérica, recebe o código SGS e o período).
 - ✅ `fetch_yfinance` em `src/extract.py` (chama a conversão do `utils.py` e retorna JSON, como o `fetch_sgs`).
@@ -73,7 +77,7 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ IPCA: como o SGS devolve o mês que **contém** a data inicial, na série mensal a busca começa no 1º dia do mês seguinte ao último dado.
 - ✅ Ibovespa: a busca vai só **até ontem**, porque a linha do dia atual vem provisória mesmo depois do fechamento.
 - ✅ Testes automatizados com pytest em `tests/` (99 testes, sem acesso à internet): `pytest` a partir da raiz.
-- 🔶 Horário de execução: CDI, PTAX e o fechamento do Ibovespa são divulgados em horários diferentes.
+- ✅ Horário de execução: fluxo diário todos os dias às 09:00, com todas as séries em D-1. IPCA nos dias 8 a 20, às 10:00. A saída do terminal é descartada.
 
 ## Fase 3 — Transformação (T) ⬜
 
