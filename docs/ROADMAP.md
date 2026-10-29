@@ -35,7 +35,7 @@ Objetivo: entender cada indicador antes de manipulá-lo.
 Todas as decisões abaixo dependem de aprovação.
 
 - ✅ Estrutura de pastas (ver registro de decisões em [CONTEXT.md](CONTEXT.md#registro-de-decisões)).
-- ✅ Linguagem e dependências: Python com PySpark, requests e pytest (`requirements.txt` + `.venv`).
+- ✅ Linguagem e dependências: Python com PySpark, requests, yfinance, pandas, curl_cffi e pytest (`requirements.txt` + `.venv`).
 - ✅ Formato da base de carga: parquet.
 - 🔶 Modelagem dos dados (granularidade, tabelas/arquivos brutos vs. tratados).
 - 🔶 Ferramenta do dashboard (Streamlit, Power BI, Excel, HTML ou outra).
@@ -72,7 +72,7 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Validação manual (28/10/2026): carga completa das 4 séries, cálculo da data inicial (reexecução e dia seguinte), série inválida, falha passageira com 3 tentativas e criação do log só com erro.
 - ✅ IPCA: como o SGS devolve o mês que **contém** a data inicial, na série mensal a busca começa no 1º dia do mês seguinte ao último dado.
 - ✅ Ibovespa: a busca vai só **até ontem**, porque a linha do dia atual vem provisória mesmo depois do fechamento.
-- ⏸️ Testes automatizados com pytest: adiados (decisão de 28/10/2026).
+- ✅ Testes automatizados com pytest em `tests/` (99 testes, sem acesso à internet): `pytest` a partir da raiz.
 - 🔶 Horário de execução: CDI, PTAX e o fechamento do Ibovespa são divulgados em horários diferentes.
 
 ## Fase 3 — Transformação (T) ⬜

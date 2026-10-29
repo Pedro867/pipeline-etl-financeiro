@@ -43,6 +43,7 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 - **Python 3.12.3** com **PySpark** para o processamento dos dados (requer Java instalado).
 - **requests** para as chamadas à API SGS do Banco Central.
 - **yfinance** para a cotação do Ibovespa.
+- **pandas** (vem com o yfinance) para converter o retorno do Ibovespa em JSON.
 - **pytest** para os testes.
 - Dados armazenados em **parquet**.
 - Agendamento via **crontab**.
@@ -56,6 +57,27 @@ pip install -r requirements.txt
 python -m src.main_daily     # séries diárias (CDI, PTAX, Ibovespa), a partir da raiz do projeto
 python -m src.main_monthly   # série mensal (IPCA), a partir da raiz do projeto
 ```
+
+## Testes
+
+```bash
+pytest          # a partir da raiz do projeto
+```
+
+Os testes ficam em `tests/` e **não acessam a internet**: as respostas do SGS e do yfinance são simuladas, e as pastas `data/` e `log/` são trocadas por pastas temporárias. Eles cobrem:
+
+- **`tests/test_utils.py`:**
+  - datas (5 anos antes, incluindo 29/02, e a virada de mês e de ano);
+  - conversão do DataFrame do yfinance para JSON (colunas e fuso);
+  - gravação e sobrescrita dos arquivos;
+  - cálculo da data inicial: carga completa, incremental, reexecução no mesmo dia e série mensal;
+  - criação do log só quando há erro.
+- **`tests/test_extract.py`:**
+  - `fetch_sgs`: sucesso, "sem dado" (HTTP 404), erros 4xx, página HTML com status 200, JSON inválido, erros 5xx/429 e de rede com retentativa;
+  - `fetch_yfinance`: período sem pregão, ticker inválido, limite de requisições, erros de rede e busca só até o dia anterior;
+  - retentativas: 3 tentativas com intervalo de 10 s;
+  - `run_extraction`: falha de uma série sem interromper as outras, um arquivo de log por execução e o fluxo completo.
+- **`tests/test_main.py`:** séries e códigos configurados em cada ponto de entrada.
 
 ## Estrutura do projeto
 
@@ -75,6 +97,11 @@ pipeline-etl-financeiro/
 │   ├── utils.py        # funções auxiliares (ex.: salvar arquivos)
 │   ├── main_daily.py   # ponto de entrada: séries diárias
 │   └── main_monthly.py # ponto de entrada: série mensal (IPCA)
+├── tests/              # testes com pytest (sem acesso à internet)
+│   ├── conftest.py     # fixtures: pastas temporárias e fontes simuladas
+│   ├── test_utils.py
+│   ├── test_extract.py
+│   └── test_main.py
 ├── log/                # logs de erro (fora do Git, criada pelo pipeline)
 ├── .gitignore
 ├── README.md
