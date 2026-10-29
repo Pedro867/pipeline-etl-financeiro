@@ -78,15 +78,16 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Confirmado em 29/10/2026: a linha do Ibovespa de D-1 chega consolidada no dia seguinte (28/10 com `Volume` 21.515.700).
 - ✅ IPCA: como o SGS devolve o mês que **contém** a data inicial, na série mensal a busca começa no 1º dia do mês seguinte ao último dado.
 - ✅ Ibovespa: a busca vai só **até ontem**, porque a linha do dia atual vem provisória mesmo depois do fechamento.
-- ✅ Testes automatizados com pytest em `tests/` (134 testes, sem acesso à internet): `pytest` a partir da raiz.
+- ✅ Testes automatizados com pytest em `tests/` (177 testes, sem acesso à internet): `pytest` a partir da raiz.
 - ✅ Horário de execução: fluxo diário todos os dias às 09:00, com todas as séries em D-1. IPCA nos dias 8 a 20, às 10:00. A saída do terminal é descartada.
 
-## Fase 3 — Transformação (T) ⬜
+## Fase 3 — Transformação (T) ✅
 
 - ✅ Silver implementada em `src/transform.py` (`build_silver`): datas e tipos padronizados, deduplicação pela ingestão mais recente e índices acumulados. Validada com a bronze real em 29/10/2026.
-- ⬜ Implementar a gold em `src/transform.py`.
-- ✅ Transformação chamada no fim de `main_daily` e `main_monthly` (`run_transformation`). Uma falha vai para o log da execução sem afetar a bronze. Por enquanto só a silver; a gold entra quando for implementada.
-- 🔄 Testes da transformação: silver coberta em `tests/test_transform.py` (30 testes); falta a gold.
+- ✅ Gold implementada em `src/transform.py` (`build_gold`): 9 tabelas. Validada com os dados reais em 29/10/2026; os números conferem com o histórico conhecido do CDI, do IPCA e do dólar.
+  - ⬜ Avaliar a diferença do fechamento do Ibovespa de 29/12/2022 no Yahoo em relação ao oficial (ver CONTEXT.md, seção 6).
+- ✅ Transformação chamada no fim de `main_daily` e `main_monthly` (`run_transformation`). Uma falha vai para o log da execução sem afetar a bronze. Roda a silver e depois a gold; se a silver falhar, a gold não roda.
+- ✅ Testes da transformação: silver em `tests/test_transform.py` (30 testes) e gold em `tests/test_gold.py` (43 testes).
 - ✅ Tratamento de dias sem dado (fins de semana, feriados, faltantes): é feito na camada silver, e cada série fica só com os dias em que tem dado, sem preenchimento.
   - ✅ Ibovespa em dólar só nas datas em comum entre Ibovespa e PTAX.
   - ✅ Quando a data de referência de uma janela cai em dia sem dado, usa-se o último dado anterior a ela.

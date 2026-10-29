@@ -253,6 +253,31 @@ Regras da `rentabilidade`:
 
 As métricas 1.6 (base 100), 2.7 (simulação de R$ 1.000.000,00) e 3.3 (drawdown máximo) são calculadas no dashboard a partir das tabelas diárias.
 
+### Regras de cálculo da gold (implementação de 29/10/2026)
+
+- **Início das janelas:**
+  - `mes`: último dia do mês anterior.
+  - `ano`: 31/12 do ano anterior.
+  - `12m`, `24m` e `36m`: a mesma data N meses antes (29/02 vira 28/02).
+  - Em todos os casos, usa-se o último dado até essa data.
+  - `data_inicio` é a data desse valor-base, e o retorno conta a partir do dia seguinte. `data_fim` é a data do último dado.
+- **Janelas reais:** terminam no **último dia do mês** do último IPCA divulgado (ex.: 30/09/2026 para o IPCA de set/2026). As bases são calculadas a partir dessa data, e o IPCA da janela usa os mesmos limites.
+- **`excesso_cdi_pp` e `pct_do_cdi`:** só nas linhas **nominais** do Ibovespa, comparadas com o CDI nominal da mesma janela.
+- **Janela sem histórico** (ex.: 36M com menos de 3 anos de dados): `retorno_pct` e as datas ficam vazios.
+- **Médias móveis e mínima/máxima de 12M:** vazias até haver histórico completo, ou seja, 50 ou 200 linhas, ou 12 meses de dados.
+- **`dist_max_5a_pct`:** compara com o maior fechamento dos últimos 5 anos. No começo do histórico, usa a máxima disponível até então.
+- **`retorno_anual`:** o primeiro ano do histórico fica de fora, porque não tem fechamento do ano anterior (hoje, 2021). O ano corrente aparece com `ano_completo = false`.
+- **`ipca_12m_pct`:** vazio nos 11 primeiros meses, ou se faltar algum mês dentro dos 12.
+- **`ultimo_valor`:** o valor principal de cada série na silver, com unidades diferentes por série:
+  - CDI: taxa diária em %;
+  - IPCA: variação mensal em %;
+  - PTAX: R$/US$;
+  - Ibovespa: pontos.
+- **`juros_reais`:** sem 12 meses de IPCA no histórico, os campos do IPCA e o spread ficam vazios.
+- **Série ausente na silver:** as tabelas que dependem dela são puladas, com aviso no log. Uma falha na gold vai para o log da execução e não afeta a bronze nem a silver.
+
+**Qualidade da fonte (yfinance):** o fechamento do Ibovespa em 29/12/2022 no Yahoo é **110.031**, e o oficial da B3 é de cerca de **109.735**. Por isso, o `retorno_anual` do Ibovespa sai **4,97%** em 2022 (oficial ≈ 4,69%) e **21,95%** em 2023 (oficial ≈ 22,28%). Os fechamentos de 2021, 2023 e 2024 conferem. O cálculo está correto; a diferença vem do dado da fonte.
+
 ---
 
 ## Registro de decisões

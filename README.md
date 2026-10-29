@@ -58,7 +58,7 @@ python -m src.main_daily     # séries diárias (CDI, PTAX, Ibovespa), a partir 
 python -m src.main_monthly   # série mensal (IPCA), a partir da raiz do projeto
 ```
 
-Cada fluxo faz a extração (bronze) e, em seguida, recalcula a camada silver em `data/processed/silver/`.
+Cada fluxo faz a extração (bronze) e, em seguida, recalcula a camada silver (`data/processed/silver/`) e a gold (`data/processed/gold/`).
 
 ## Agendamento
 
@@ -102,6 +102,7 @@ Os testes ficam em `tests/` e **não acessam a internet**: as respostas do SGS e
   - retentativas: 3 tentativas com intervalo de 10 s;
   - `run_extraction`: falha de uma série sem interromper as outras, um arquivo de log por execução e o fluxo completo.
 - **`tests/test_transform.py`:** silver: esquema e tipos do parquet, conversão de cada série, índices acumulados, união da bronze com deduplicação pela ingestão mais recente, ordenação, sem preenchimento de dias, descarte de valores inválidos e série ausente.
+- **`tests/test_gold.py`:** gold, com séries sintéticas: início das janelas e "último dado anterior", retornos nominais e reais (alinhados ao IPCA, pela fórmula de Fisher), excesso e % do CDI, médias móveis por linha, mínima/máxima com janela completa, distância da máxima em 5 anos, Ibovespa em dólar só nas datas em comum, retorno anual, IPCA 12M e anualizado, juros reais, tipos do parquet, séries ausentes e falhas registradas no log.
 - **`tests/test_main.py`:** séries e códigos configurados em cada ponto de entrada.
 
 ## Estrutura do projeto
@@ -129,6 +130,7 @@ pipeline-etl-financeiro/
 │   ├── test_utils.py
 │   ├── test_extract.py
 │   ├── test_transform.py
+│   ├── test_gold.py
 │   └── test_main.py
 ├── log/                # logs de erro (fora do Git, criada pelo pipeline)
 ├── .gitignore
