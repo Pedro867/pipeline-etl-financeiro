@@ -66,7 +66,12 @@ Formato de retorno: lista JSON de `{"data": "dd/mm/aaaa", "valor": "<texto>"}`. 
 - Na série **mensal (IPCA)**, a API devolve o mês que *contém* a `dataInicial`. Pedindo de 28/10/2021 em diante, o primeiro registro veio com data 01/10/2021, e pedir a partir de 02/09/2026 traz o de 01/09/2026.
 - No **Ibovespa** (yfinance), a linha do dia atual veio **provisória** mesmo depois do fechamento: `Volume = 0` e `Close` fracionado. A linha de 27/10, consultada em 28/10, já estava consolidada (`Close` 175.710,0 e volume preenchido).
 
-Por isso, um `raise_for_status()` do `requests` trataria "sem dado" como erro. Para diferenciar, o código precisa verificar o 404 junto com o texto `Value(s) not found`.
+Por isso, um `raise_for_status()` do `requests` trataria "sem dado" como erro. Para diferenciar, o código verifica o texto `Value(s) not found` no corpo da resposta.
+
+**Revisto em 29/10/2026**, a partir de erros da execução do `@reboot`:
+- **"Sem dado" também chega com HTTP 200.** O pedido do IPCA de 01/10 a 29/10 voltou com status **200** e o corpo `{"erro": {"statusCode": 404, ... "Value(s) not found"}}`, enquanto o de 02/10 a 28/10 voltou com 404 e o mesmo corpo. Por isso o código reconhece `Value(s) not found` **com qualquer status HTTP**.
+- **Período de um dia só é recusado.** Com `dataInicial` igual a `dataFinal`, a API responde **HTTP 400** `{"erro": "DataFinal deve ser maior que dataInicial."}`, mesmo em dia com dado. Em 28/10, a consulta de 08/09 a 08/09 tinha devolvido 200; em 29/10, a mesma consulta devolveu 400. Uma `dataFinal` **futura** é aceita: 29/10 a 30/10 devolve só o dado de 29/10. Por isso, quando o período tem um dia só, o código envia o dia seguinte como `dataFinal`.
+- **Erro 503 passageiro observado.** Em 29/10, o CDI respondeu HTTP 503 duas vezes seguidas e a terceira tentativa deu certo.
 
 ### Mapa de erros das fontes
 
@@ -77,7 +82,8 @@ Levantado com testes nas fontes em 28/10/2026. A coluna "Retentar?" foi aprovada
 | Situação | Resposta observada | Retentar? |
 |---|---|---|
 | Sucesso | HTTP 200, lista JSON | — |
-| Período sem dado (feriado, fim de semana) | HTTP 404, `Value(s) not found` | Não é erro (decidido: não salva arquivo) |
+| Período sem dado (feriado, fim de semana, dado ainda não publicado) | HTTP 404 **ou HTTP 200**, com `Value(s) not found` no corpo | Não é erro (decidido: não salva arquivo) |
+| Período de um dia só (`dataInicial` = `dataFinal`) | HTTP 400, `DataFinal deve ser maior que dataInicial.` | Evitado no código: a `dataFinal` vai para o dia seguinte |
 | Data em formato inválido | HTTP 400, `Invalid initial date` | Não: é erro no código |
 | Janela maior que 10 anos (série diária) | HTTP 406, "janela de consulta de, no máximo, 10 anos" | Não: é erro no código (os 5 anos estão dentro do limite) |
 | Código de série inexistente | ⚠️ **HTTP 200** com uma **página HTML** ("Requisição inválida!"), depois de cerca de 30 s | Não: é erro de configuração. O status 200 sozinho não basta; é preciso validar o `Content-Type` ou se o corpo é JSON. |
@@ -197,7 +203,7 @@ Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um d
 | 2026-10-28 | O fluxo mensal (IPCA) tem um script de entrada próprio, `src/main_monthly.py`, executado com `python -m src.main_monthly`. O `src/main.py` fica com as séries diárias. | Facilita o agendamento separado no crontab. | ✅ |
 | 2026-10-28 | `src/main.py` renomeado para `src/main_daily.py` (executado com `python -m src.main_daily`). Substitui o `main.py` das decisões anteriores. | Nomes simétricos para os dois pontos de entrada (`main_daily` e `main_monthly`). | ✅ |
 | 2026-10-28 | Se uma série for executada mais de uma vez no mesmo dia, o arquivo do dia é sobrescrito. | Escolha do responsável pelo projeto. | ✅ |
-| 2026-10-28 | Quando a fonte não tem dado para o período pedido (no SGS, HTTP 404 com `Value(s) not found`), nenhum arquivo é salvo e a execução segue normalmente. Cada execução faz uma única requisição por série. | Salvar `[]` faria a data inicial da próxima carga avançar, e um dia ainda não publicado seria perdido para sempre. Sem arquivo, o mesmo dia é pedido de novo na próxima execução. | ✅ |
+| 2026-10-28 | Quando a fonte não tem dado para o período pedido (no SGS, `Value(s) not found` no corpo, com HTTP 404 ou 200; ver revisão de 29/10), nenhum arquivo é salvo e a execução segue normalmente. Cada execução faz uma única requisição por série. | Salvar `[]` faria a data inicial da próxima carga avançar, e um dia ainda não publicado seria perdido para sempre. Sem arquivo, o mesmo dia é pedido de novo na próxima execução. | ✅ |
 | 2026-10-28 | Retentativa nas chamadas às fontes: **1 tentativa + 2 retentativas** (3 no total), com **intervalo fixo de 10 s** e **timeout de 60 s** por requisição. | Absorve instabilidades passageiras sem insistir demais. O timeout de 60 s deixa chegar a resposta de código SGS inexistente (cerca de 30 s), que assim é classificada como erro de configuração, e não como timeout. | ✅ |
 | 2026-10-28 | Só os erros passageiros são retentados (timeout, falha de conexão, HTTP 5xx ou 429, `YFRateLimitError`). Erro de código ou de configuração não é retentado. "Sem dado" não é erro. | Tentar de novo um erro de código ou de configuração dá sempre o mesmo resultado. | ✅ |
 | 2026-10-28 | Se todas as tentativas de uma série falharem, o erro é registrado em log e o fluxo segue para as outras séries. Os logs ficam em `log/` na raiz do projeto, fora do Git (`.gitignore`), com **um arquivo por execução**: `log/<fluxo>_YYYYMMDD_HHMMSS.log`, onde `<fluxo>` é `daily` ou `monthly` e a data e a hora são as do início da execução. O arquivo só é criado quando há erro. Cada linha registra a hora do erro e a série. | Uma fonte fora do ar não impede a coleta das outras. A série que falhou é pedida de novo na próxima execução, porque nenhum arquivo foi salvo. | ✅ |
@@ -212,6 +218,8 @@ Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um d
 | 2026-10-28 | Fluxo mensal (IPCA) agendado **todos os dias de 8 a 20 de cada mês, às 10:00** (`0 10 8-20 * *`). | A data de divulgação do IBGE muda de mês para mês, por volta do dia 10, às 9h. Repetir nessa janela pega o IPCA em até 1 dia após a divulgação, sem duplicar nada. | ✅ |
 | 2026-10-28 | **Revisão de decisão anterior:** o crontab foi instalado na máquina antes de o ETL estar completo, por enquanto só com a extração. | O responsável pelo projeto instalou e testou o agendamento. A camada bronze já começa a acumular dados. | ✅ |
 | 2026-10-28 | Além dos horários fixos, o crontab roda os dois fluxos **ao ligar a máquina** (`@reboot`), 2 minutos depois do boot. | A máquina nem sempre está ligada às 09:00. Rodar ao ligar atualiza os dados assim que possível; a carga incremental busca os dias perdidos. Os 2 minutos dão tempo para a rede conectar. Limitação: o `@reboot` não roda ao voltar da suspensão. | ✅ |
+| 2026-10-29 | `fetch_sgs` trata como "sem dado" qualquer resposta com `Value(s) not found` no corpo, seja qual for o status HTTP. | O SGS devolveu "sem dado" com HTTP 200 para o IPCA, e o pipeline registrou isso como erro. | ✅ |
+| 2026-10-29 | Quando o período pedido ao SGS tem um dia só, a `dataFinal` enviada é o dia seguinte. | O SGS passou a recusar `dataInicial` = `dataFinal` (HTTP 400) e aceita uma `dataFinal` futura, devolvendo só o que existe. | ✅ |
 | 2026-10-28 | A saída do terminal das execuções do cron é descartada (`> /dev/null 2>&1`). | Os erros de extração já ficam em `log/`. | ✅ |
 | 2026-10-28 | `requirements.txt` gerado de novo com as dependências **importadas diretamente** pelo código e pelos testes, todas com versão fixa: `pyspark`, `requests`, `pytest`, `yfinance`, `pandas` e `curl_cffi`. | `pandas` e `curl_cffi` vinham só como dependências do yfinance, mas passaram a ser importados direto pelo código: `pandas` na conversão para JSON e `curl_cffi` na detecção dos erros de rede do yfinance. | ✅ |
 | 2026-10-28 | Os itens pendentes da Fase 0 (estudo dos indicadores, unidades e limites das fontes, calendários) ficam para depois que a camada silver estiver pronta. | Escolha do responsável pelo projeto. | ✅ |

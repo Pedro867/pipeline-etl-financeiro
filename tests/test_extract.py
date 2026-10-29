@@ -124,6 +124,50 @@ def test_fetch_sgs_no_data_returns_empty_list_without_retry(fake_get, sleeps):
     assert sleeps == []
 
 
+def test_fetch_sgs_no_data_with_status_200_returns_empty_list(fake_get, sleeps):
+    # Observado em 29/10/2026 no IPCA: "Value(s) not found" no corpo, mas com HTTP 200.
+    calls = fake_get(make_response(200, NOT_FOUND))
+
+    assert extract.fetch_sgs(433, date(2026, 10, 1), date(2026, 10, 29)) == []
+    assert len(calls) == 1
+    assert sleeps == []
+
+
+def test_fetch_sgs_single_day_period_sends_next_day_as_end(fake_get):
+    # O SGS recusa dataInicial == dataFinal (HTTP 400); a dataFinal vai para o dia seguinte.
+    calls = fake_get(make_response(200, [{"data": "29/10/2026", "valor": "5.3744"}]))
+
+    data = extract.fetch_sgs(1, date(2026, 10, 29), date(2026, 10, 29))
+
+    assert data == [{"data": "29/10/2026", "valor": "5.3744"}]
+    assert "dataInicial=29/10/2026&dataFinal=30/10/2026" in calls[0]["url"]
+
+
+def test_fetch_sgs_single_day_at_end_of_year(fake_get):
+    calls = fake_get(make_response(200, SGS_DATA))
+
+    extract.fetch_sgs(1, date(2026, 12, 31), date(2026, 12, 31))
+
+    assert "dataInicial=31/12/2026&dataFinal=01/01/2027" in calls[0]["url"]
+
+
+def test_fetch_sgs_multi_day_period_keeps_end(fake_get):
+    calls = fake_get(make_response(200, SGS_DATA))
+
+    extract.fetch_sgs(1, date(2026, 10, 28), date(2026, 10, 29))
+
+    assert "dataInicial=28/10/2026&dataFinal=29/10/2026" in calls[0]["url"]
+
+
+def test_fetch_sgs_single_day_rejected_message_is_an_error(fake_get, sleeps):
+    # Se o SGS ainda assim responder o 400 de período, é erro (não "sem dado") e não é retentado.
+    calls = fake_get(make_response(400, {"erro": "DataFinal deve ser maior que dataInicial."}))
+
+    with pytest.raises(requests.HTTPError):
+        extract.fetch_sgs(1, date(2026, 10, 28), date(2026, 10, 29))
+    assert len(calls) == 1
+
+
 def test_fetch_sgs_other_404_is_an_error(fake_get, sleeps):
     calls = fake_get(make_response(404, "Not Found", content_type="text/html"))
 

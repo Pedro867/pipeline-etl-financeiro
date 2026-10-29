@@ -74,9 +74,11 @@ Todas as decisões abaixo dependem de aprovação.
   - ✅ Nome com o fluxo: `log/daily_YYYYMMDD_HHMMSS.log` e `log/monthly_YYYYMMDD_HHMMSS.log`.
   - ✅ O arquivo só é criado quando a execução tem erro.
 - ✅ Validação manual (28/10/2026): carga completa das 4 séries, cálculo da data inicial (reexecução e dia seguinte), série inválida, falha passageira com 3 tentativas e criação do log só com erro.
+- ✅ Correções de 29/10/2026, a partir dos logs do `@reboot`: "sem dado" do SGS com HTTP 200 (IPCA) e recusa de período de um dia só (PTAX). Validadas com a API real; na mesma execução, um 503 passageiro do CDI se resolveu na 3ª tentativa.
+- ✅ Confirmado em 29/10/2026: a linha do Ibovespa de D-1 chega consolidada no dia seguinte (28/10 com `Volume` 21.515.700).
 - ✅ IPCA: como o SGS devolve o mês que **contém** a data inicial, na série mensal a busca começa no 1º dia do mês seguinte ao último dado.
 - ✅ Ibovespa: a busca vai só **até ontem**, porque a linha do dia atual vem provisória mesmo depois do fechamento.
-- ✅ Testes automatizados com pytest em `tests/` (99 testes, sem acesso à internet): `pytest` a partir da raiz.
+- ✅ Testes automatizados com pytest em `tests/` (104 testes, sem acesso à internet): `pytest` a partir da raiz.
 - ✅ Horário de execução: fluxo diário todos os dias às 09:00, com todas as séries em D-1. IPCA nos dias 8 a 20, às 10:00. A saída do terminal é descartada.
 
 ## Fase 3 — Transformação (T) ⬜

@@ -95,7 +95,7 @@ Os testes ficam em `tests/` e **não acessam a internet**: as respostas do SGS e
   - cálculo da data inicial: carga completa, incremental, reexecução no mesmo dia e série mensal;
   - criação do log só quando há erro.
 - **`tests/test_extract.py`:**
-  - `fetch_sgs`: sucesso, "sem dado" (HTTP 404), erros 4xx, página HTML com status 200, JSON inválido, erros 5xx/429 e de rede com retentativa;
+  - `fetch_sgs`: sucesso, "sem dado" (HTTP 404 ou 200), período de um dia só, erros 4xx, página HTML com status 200, JSON inválido, erros 5xx/429 e de rede com retentativa;
   - `fetch_yfinance`: período sem pregão, ticker inválido, limite de requisições, erros de rede e busca só até o dia anterior;
   - retentativas: 3 tentativas com intervalo de 10 s;
   - `run_extraction`: falha de uma série sem interromper as outras, um arquivo de log por execução e o fluxo completo.

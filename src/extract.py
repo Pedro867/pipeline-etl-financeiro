@@ -1,6 +1,6 @@
 import logging
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Callable
 
 import requests
@@ -55,11 +55,16 @@ def _with_retry(request: Callable[[], list[dict]], source: str) -> list[dict]:
 
 def fetch_sgs(code: int, start: date, end: date) -> list[dict]:
     """Busca uma série do SGS (Banco Central) como a API retorna. Retorna [] se o período não tem dado."""
+    # O SGS recusa período de um dia só (HTTP 400 "DataFinal deve ser maior que dataInicial").
+    # Uma dataFinal futura é aceita e a resposta traz só o que já existe.
+    if start == end:
+        end += timedelta(days=1)
     url = SGS_URL.format(code=code, start=f"{start:%d/%m/%Y}", end=f"{end:%d/%m/%Y}")
 
     def request() -> list[dict]:
         response = requests.get(url, timeout=TIMEOUT_SECONDS)
-        if response.status_code == 404 and "Value(s) not found" in response.text:
+        # "Sem dado" pode vir com HTTP 404 ou com HTTP 200 e o erro no corpo.
+        if "Value(s) not found" in response.text:
             return []
         if response.status_code == 429 or response.status_code >= 500:
             raise TransientError(f"HTTP {response.status_code}")
