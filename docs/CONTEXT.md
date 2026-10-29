@@ -61,6 +61,11 @@ Formato de retorno: lista JSON de `{"data": "dd/mm/aaaa", "valor": "<texto>"}`. 
 {"erro": {"statusCode": 404, "detail": "br.gov.bcb.pec.sgs.comum.excecoes.SGSNegocioException: Value(s) not found"}}
 ```
 
+**Observado na primeira carga (28/10/2026, às 21h):**
+- O **CDI** mais recente era o de 27/10: o dado do dia sai em D+1.
+- Na série **mensal (IPCA)**, a API devolve o mês que *contém* a `dataInicial`. Pedindo de 28/10/2021 em diante, o primeiro registro veio com data 01/10/2021, e pedir a partir de 02/09/2026 traz o de 01/09/2026.
+- No **Ibovespa** (yfinance), a linha do dia atual veio **provisória** mesmo depois do fechamento: `Volume = 0` e `Close` fracionado. A linha de 27/10, consultada em 28/10, já estava consolidada (`Close` 175.710,0 e volume preenchido).
+
 Por isso, um `raise_for_status()` do `requests` trataria "sem dado" como erro. Para diferenciar, o código precisa verificar o 404 junto com o texto `Value(s) not found`.
 
 ### Mapa de erros das fontes
@@ -186,6 +191,9 @@ Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um d
 | 2026-10-28 | O JSON é salvo como a fonte retorna, sem metadados. O retorno do yfinance (DataFrame) é convertido para JSON. | Todas as séries chegam à camada silver no mesmo formato. | ✅ |
 | 2026-10-28 | As séries diárias (CDI, PTAX, Ibovespa) rodam em um fluxo, uma vez por dia. O IPCA (mensal) roda em um fluxo separado. | As frequências de publicação são diferentes. | ✅ |
 | 2026-10-28 | Data inicial da carga incremental: o dia seguinte ao último arquivo salvo da série (até a data atual). | Em um dia normal é só o dia atual, e se uma execução falhar os dias perdidos entram automaticamente na seguinte. | ✅ |
+| 2026-10-28 | **Revisão da decisão anterior:** a data inicial da carga incremental é o dia seguinte à **maior data de dado** dentro do último arquivo da série anterior a hoje. O nome do arquivo continua sendo a data de ingestão. | Pela data do nome do arquivo, dados publicados com atraso nunca entrariam. O IPCA de setembro, por exemplo, sai por volta de 10/10 com data 01/09, e o CDI costuma sair em D+1. Usar o último arquivo *anterior* a hoje mantém a sobrescrita no mesmo dia. | ✅ |
+| 2026-10-28 | Nomes das séries (subpastas e arquivos): `cdi`, `ipca`, `dolar_ptax` e `ibovespa`. | Escolha do responsável pelo projeto. | ✅ |
+| 2026-10-28 | Conversão do yfinance para JSON: uma lista de registros com **todas as colunas** como vêm do `Ticker.history` e a data local do pregão em `AAAA-MM-DD`, sem fuso, na chave `Date`. | É o mais fiel ao "salvar como vem". Tirar o fuso evita que a data mude na conversão. | ✅ |
 | 2026-10-28 | O fluxo mensal (IPCA) tem um script de entrada próprio, `src/main_monthly.py`, executado com `python -m src.main_monthly`. O `src/main.py` fica com as séries diárias. | Facilita o agendamento separado no crontab. | ✅ |
 | 2026-10-28 | `src/main.py` renomeado para `src/main_daily.py` (executado com `python -m src.main_daily`). Substitui o `main.py` das decisões anteriores. | Nomes simétricos para os dois pontos de entrada (`main_daily` e `main_monthly`). | ✅ |
 | 2026-10-28 | Se uma série for executada mais de uma vez no mesmo dia, o arquivo do dia é sobrescrito. | Escolha do responsável pelo projeto. | ✅ |
@@ -196,5 +204,8 @@ Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um d
 | 2026-10-28 | No yfinance, usar `yf.Ticker(...).history(..., raise_errors=True)` no lugar de `yf.download`. | O `yf.download` não lança exceção e não diferencia ticker inválido de período sem pregão. | ✅ |
 | 2026-10-28 | O fluxo diário é agendado para **depois do fechamento do pregão** da B3. O horário exato fica para a configuração do crontab. | Evita salvar a linha parcial do pregão em andamento do Ibovespa. Por enquanto não há proteção extra contra execução manual durante o pregão: nesse caso, a linha parcial é salva e só é corrigida se o fluxo rodar de novo no mesmo dia, depois do fechamento (o arquivo do dia é sobrescrito). | ✅ |
 | 2026-10-28 | A queda de cerca de 14% do Ibovespa em 26/10/2026 é tratada como dado válido. | Foi confirmada por fontes independentes (BOVA11, EWZ, ações da carteira e a PTAX oficial). | ✅ |
+| 2026-10-28 | Na série **mensal** (IPCA), a data inicial da carga incremental é o **1º dia do mês seguinte** ao último dado. | O SGS devolve o mês que contém a data inicial. Começar no dia seguinte ao último dado faria a busca trazer o último IPCA de novo a cada execução. | ✅ |
+| 2026-10-28 | O **Ibovespa** é buscado só **até o dia anterior** à execução. | A linha do dia atual vem provisória (`Volume = 0`, valor não consolidado) mesmo depois do fechamento, e a carga incremental não volta em dias anteriores. Com isso, o horário do agendamento deixa de ser crítico para o Ibovespa. | ✅ |
+| 2026-10-28 | Testes automatizados com pytest ficam para depois. | Escolha do responsável pelo projeto. | ✅ |
 | 2026-10-28 | Os itens pendentes da Fase 0 (estudo dos indicadores, unidades e limites das fontes, calendários) ficam para depois que a camada silver estiver pronta. | Escolha do responsável pelo projeto. | ✅ |
 | 2026-10-28 | A carga incremental não refaz dias anteriores para pegar correções. A defasagem do IPCA é resolvida pelo agendamento do crontab. | Simplicidade. | ✅ |

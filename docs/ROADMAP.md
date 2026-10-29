@@ -43,18 +43,19 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Agendamento: crontab.
   - ⬜ Configurar o crontab (frequência e horário) depois que todo o ETL estiver pronto.
 
-## Fase 2 — Extração (E) ⬜
+## Fase 2 — Extração (E) 🔄
 
-- ⬜ Implementar `fetch_sgs` em `src/extract.py` (genérica, recebe o código SGS e o período).
-- ⬜ Implementar `fetch_yfinance` em `src/extract.py` (chama a conversão do `utils.py` e retorna JSON, como o `fetch_sgs`).
-- ⬜ Implementar em `src/utils.py`:
-  - ⬜ a função que converte o DataFrame do yfinance para JSON;
-  - ⬜ a função que salva o JSON em `data/raw/<serie>/<serie>_YYYYMMDD.json`.
-- ⬜ Carga completa (5 anos) na primeira execução e incremental nas seguintes: do dia seguinte ao último arquivo salvo até hoje.
-- ⬜ Coletar CDI, PTAX venda e Ibovespa (séries diárias) via `src/main_daily.py`.
-- ⬜ Coletar IPCA (série mensal) via `src/main_monthly.py`.
-- ⬜ Se a série for executada de novo no mesmo dia, sobrescrever o arquivo do dia. Na reexecução, a data inicial é calculada pelo último arquivo **anterior** a hoje; caso contrário, ela cairia em amanhã e a busca viria vazia.
-- 🔶 Horário de execução: CDI, PTAX e o fechamento do Ibovespa são divulgados em horários diferentes.
+- ✅ `fetch_sgs` em `src/extract.py` (genérica, recebe o código SGS e o período).
+- ✅ `fetch_yfinance` em `src/extract.py` (chama a conversão do `utils.py` e retorna JSON, como o `fetch_sgs`).
+- ✅ Em `src/utils.py`:
+  - ✅ `dataframe_to_json`: converte o DataFrame do yfinance para JSON;
+  - ✅ `save_json`: salva o JSON em `data/raw/<serie>/<serie>_YYYYMMDD.json`;
+  - ✅ `get_start_date`: calcula a data inicial (carga completa ou incremental);
+  - ✅ `configure_logging`: log no terminal e erros em `log/`.
+- ✅ Carga completa (5 anos) na primeira execução e incremental nas seguintes: do dia seguinte à maior data de dado do último arquivo anterior a hoje até hoje.
+- ✅ CDI, Dólar PTAX e Ibovespa (séries diárias) via `src/main_daily.py`.
+- ✅ IPCA (série mensal) via `src/main_monthly.py`.
+- ✅ Reexecução no mesmo dia sobrescreve o arquivo do dia (a data inicial é calculada pelo último arquivo **anterior** a hoje).
 - ✅ Verificar o que a API SGS retorna quando o período pedido não tem dado (ex.: feriado): **HTTP 404** com `"Value(s) not found"` (ver [CONTEXT.md](CONTEXT.md#api-sgs-banco-central)).
   - ✅ Quando não há dado, nenhum arquivo é salvo. A próxima execução pede de novo a partir do mesmo ponto.
 - ✅ Tratamento de erros e retentativas nas chamadas às fontes (ver [CONTEXT.md](CONTEXT.md#mapa-de-erros-das-fontes)).
@@ -64,10 +65,15 @@ Todas as decisões abaixo dependem de aprovação.
   - ✅ Retentar só os erros passageiros (coluna "Retentar?" do mapa).
   - ✅ Se todas as tentativas falharem, registrar o erro em log e seguir para as outras séries.
   - ✅ Usar `yf.Ticker(...).history(..., raise_errors=True)` no yfinance.
-- ⬜ Registrar os erros em arquivos de log na pasta `log/` da raiz do projeto (fora do Git), criada pelo pipeline se não existir.
+- ✅ Registrar os erros em arquivos de log na pasta `log/` da raiz do projeto (fora do Git), criada pelo pipeline se não existir.
   - ✅ Um arquivo por execução, com a data e a hora do início no nome. Cada linha traz a hora do erro e a série.
   - ✅ Nome com o fluxo: `log/daily_YYYYMMDD_HHMMSS.log` e `log/monthly_YYYYMMDD_HHMMSS.log`.
   - ✅ O arquivo só é criado quando a execução tem erro.
+- ✅ Validação manual (28/10/2026): carga completa das 4 séries, cálculo da data inicial (reexecução e dia seguinte), série inválida, falha passageira com 3 tentativas e criação do log só com erro.
+- ✅ IPCA: como o SGS devolve o mês que **contém** a data inicial, na série mensal a busca começa no 1º dia do mês seguinte ao último dado.
+- ✅ Ibovespa: a busca vai só **até ontem**, porque a linha do dia atual vem provisória mesmo depois do fechamento.
+- ⏸️ Testes automatizados com pytest: adiados (decisão de 28/10/2026).
+- 🔶 Horário de execução: CDI, PTAX e o fechamento do Ibovespa são divulgados em horários diferentes.
 
 ## Fase 3 — Transformação (T) ⬜
 
