@@ -99,6 +99,7 @@ Os testes ficam em `tests/` e **não acessam a internet**: as respostas do SGS e
   - `fetch_yfinance`: período sem pregão, ticker inválido, limite de requisições, erros de rede e busca só até o dia anterior;
   - retentativas: 3 tentativas com intervalo de 10 s;
   - `run_extraction`: falha de uma série sem interromper as outras, um arquivo de log por execução e o fluxo completo.
+- **`tests/test_transform.py`:** silver: esquema e tipos do parquet, conversão de cada série, índices acumulados, união da bronze com deduplicação pela ingestão mais recente, ordenação, sem preenchimento de dias, descarte de valores inválidos e série ausente.
 - **`tests/test_main.py`:** séries e códigos configurados em cada ponto de entrada.
 
 ## Estrutura do projeto
@@ -107,14 +108,16 @@ Os testes ficam em `tests/` e **não acessam a internet**: as respostas do SGS e
 pipeline-etl-financeiro/
 ├── data/
 │   ├── raw/            # dados brutos extraídos
-│   └── processed/      # dados tratados
+│   └── processed/
+│       ├── silver/     # séries limpas e tipadas (parquet)
+│       └── gold/       # métricas (parquet)
 ├── docs/
 │   ├── CONTEXT.md      # contexto do case e registro de decisões
 │   └── ROADMAP.md      # fases e andamento
 ├── src/
 │   ├── __init__.py
 │   ├── extract.py      # extração (E)
-│   ├── transform.py    # transformação (T)
+│   ├── transform.py    # transformação (T): silver e gold
 │   ├── load.py         # carga (L)
 │   ├── utils.py        # funções auxiliares (ex.: salvar arquivos)
 │   ├── main_daily.py   # ponto de entrada: séries diárias
@@ -123,6 +126,7 @@ pipeline-etl-financeiro/
 │   ├── conftest.py     # fixtures: pastas temporárias e fontes simuladas
 │   ├── test_utils.py
 │   ├── test_extract.py
+│   ├── test_transform.py
 │   └── test_main.py
 ├── log/                # logs de erro (fora do Git, criada pelo pipeline)
 ├── .gitignore

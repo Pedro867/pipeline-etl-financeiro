@@ -223,7 +223,13 @@ Aprovado em 29/10/2026. As tabelas são recalculadas inteiras a cada execução,
 | `dolar_ptax` | `data`, `ptax_venda` |
 | `ibovespa` | `data`, `fechamento` |
 
-O `indice` do CDI e o do IPCA começam em 100 e acumulam (1 + taxa/100) a cada período. Se houver data repetida na bronze, fica o registro do arquivo de ingestão mais recente.
+O `indice` do CDI e o do IPCA partem de uma base 100 e acumulam (1 + taxa/100) a cada período, **incluindo a taxa do próprio período**. O índice da primeira data já vale 100 × (1 + taxa do primeiro dia). Com isso, `indice(fim) ÷ indice(início) − 1` dá o retorno das taxas **depois** da data inicial até a data final, inclusive. Ex.: o CDI de outubro é o índice do último dia útil de outubro dividido pelo do último dia útil de setembro.
+
+Outras regras da silver:
+- Se houver data repetida na bronze, fica o registro do arquivo de ingestão mais recente (pela data no nome do arquivo).
+- Registros com data ou valor que não podem ser convertidos são descartados, com aviso no log.
+- Série sem nenhum dado na bronze é pulada, com aviso, sem interromper as outras.
+- Nos arquivos parquet, as datas são gravadas como `date`, sem hora.
 
 ### Gold (`data/processed/gold/`)
 

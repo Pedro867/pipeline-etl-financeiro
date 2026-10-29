@@ -9,6 +9,8 @@ import pandas as pd
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT_DIR / "data" / "raw"
+SILVER_DIR = ROOT_DIR / "data" / "processed" / "silver"
+GOLD_DIR = ROOT_DIR / "data" / "processed" / "gold"
 LOG_DIR = ROOT_DIR / "log"
 
 YEARS_OF_HISTORY = 5

@@ -78,15 +78,15 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Confirmado em 29/10/2026: a linha do Ibovespa de D-1 chega consolidada no dia seguinte (28/10 com `Volume` 21.515.700).
 - ✅ IPCA: como o SGS devolve o mês que **contém** a data inicial, na série mensal a busca começa no 1º dia do mês seguinte ao último dado.
 - ✅ Ibovespa: a busca vai só **até ontem**, porque a linha do dia atual vem provisória mesmo depois do fechamento.
-- ✅ Testes automatizados com pytest em `tests/` (104 testes, sem acesso à internet): `pytest` a partir da raiz.
+- ✅ Testes automatizados com pytest em `tests/` (132 testes, sem acesso à internet): `pytest` a partir da raiz.
 - ✅ Horário de execução: fluxo diário todos os dias às 09:00, com todas as séries em D-1. IPCA nos dias 8 a 20, às 10:00. A saída do terminal é descartada.
 
 ## Fase 3 — Transformação (T) ⬜
 
-- ⬜ Implementar a silver em `src/transform.py` com pandas: datas e tipos padronizados, deduplicação e índices acumulados.
+- ✅ Silver implementada em `src/transform.py` (`build_silver`): datas e tipos padronizados, deduplicação pela ingestão mais recente e índices acumulados. Validada com a bronze real em 29/10/2026.
 - ⬜ Implementar a gold em `src/transform.py`.
 - ⬜ Chamar a transformação no fim de `main_daily` e `main_monthly`.
-- ⬜ Testes da transformação.
+- 🔄 Testes da transformação: silver coberta em `tests/test_transform.py` (28 testes); falta a gold.
 - ✅ Tratamento de dias sem dado (fins de semana, feriados, faltantes): é feito na camada silver, e cada série fica só com os dias em que tem dado, sem preenchimento.
   - ✅ Ibovespa em dólar só nas datas em comum entre Ibovespa e PTAX.
   - ✅ Quando a data de referência de uma janela cai em dia sem dado, usa-se o último dado anterior a ela.

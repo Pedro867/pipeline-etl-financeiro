@@ -13,10 +13,12 @@ from src import extract, utils
 
 @pytest.fixture(autouse=True)
 def isolated_dirs(tmp_path, monkeypatch):
-    """Redireciona data/raw e log/ para uma pasta temporária."""
+    """Redireciona data/raw, data/processed e log/ para uma pasta temporária."""
     raw_dir = tmp_path / "data" / "raw"
     log_dir = tmp_path / "log"
     monkeypatch.setattr(utils, "RAW_DIR", raw_dir)
+    monkeypatch.setattr(utils, "SILVER_DIR", tmp_path / "data" / "processed" / "silver")
+    monkeypatch.setattr(utils, "GOLD_DIR", tmp_path / "data" / "processed" / "gold")
     monkeypatch.setattr(utils, "LOG_DIR", log_dir)
     return raw_dir, log_dir
 
