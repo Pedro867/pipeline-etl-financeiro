@@ -172,6 +172,83 @@ Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um d
 
 ---
 
+## 5. Métricas aprovadas (camada silver/gold)
+
+Aprovadas em 29/10/2026. O CDI e o IPCA são convertidos em **índice acumulado** (base 100) antes de qualquer variação: CDI pelo produto de (1 + taxa diária/100), IPCA pelo produto de (1 + variação mensal/100). Assim, toda variação de período é calculada como valor final ÷ valor inicial − 1.
+
+| # | Métrica | Séries | Definição | Onde calcular |
+|---|---|---|---|---|
+| 1.1 | Variação diária (D-1) | Ibovespa, dólar | último fechamento ÷ fechamento anterior − 1 | transformação |
+| 1.2 | Variação no mês (MoM) | todas | último valor ÷ último valor do mês anterior − 1 (no IPCA, o próprio valor do mês) | transformação |
+| 1.3 | Variação no ano (YTD) | todas | último valor ÷ **último fechamento do ano anterior** − 1 | transformação |
+| 1.4 | Janelas de 12, 24 e 36 meses | todas | último valor ÷ valor de 12, 24 ou 36 meses antes − 1 | transformação |
+| 1.5 | Retorno por ano-calendário | todas | variação de cada ano fechado (2022, 2023…) e do ano corrente | transformação |
+| 1.6 | Comparação em base 100 | todas | índice de cada série rebaseado em 100 numa data inicial comum | dashboard (a data inicial vem do filtro) |
+| 2.1 | Ganho real do CDI | CDI, IPCA | (1 + CDI do período) ÷ (1 + IPCA do período) − 1 | transformação |
+| 2.2 | Retorno real do Ibovespa | Ibovespa, IPCA | (1 + Ibovespa do período) ÷ (1 + IPCA do período) − 1 | transformação |
+| 2.3 | Ibovespa em dólar | Ibovespa, PTAX | Ibovespa ÷ PTAX da mesma data | transformação |
+| 2.4 | Ibovespa contra o CDI | Ibovespa, CDI | **excesso de retorno em p.p.** (Ibovespa − CDI); "% do CDI" só quando os dois retornos forem positivos | transformação |
+| 2.5 | CDI anualizado | CDI | (1 + taxa diária/100)^252 − 1 | transformação |
+| 2.6 | IPCA acumulado em 12 meses | IPCA | produto dos 12 últimos meses divulgados − 1 | transformação |
+| 2.7 | Simulação de R$ 1.000.000,00 aplicados | todas | R$ 1.000.000 × (1 + variação do período) | dashboard (o período vem do filtro) |
+| 3.1 | Mínima e máxima em 12 meses | Ibovespa, dólar | menor e maior fechamento dos últimos 12 meses | transformação |
+| 3.2 | Distância da máxima em 5 anos | Ibovespa | último fechamento ÷ maior fechamento disponível − 1 (chamada "máxima em 5 anos", e não "histórica") | transformação |
+| 3.3 | Drawdown máximo do período | Ibovespa, dólar | maior queda de um pico até o vale seguinte, dentro do período filtrado | dashboard (depende do filtro) |
+| 4.1 | IPCA anualizado do mês | IPCA | (1 + IPCA mensal)^12 − 1, sempre exibido ao lado do IPCA 12M (por causa da sazonalidade) | transformação |
+| 4.2 | Distância das médias móveis de 50 e 200 pregões | Ibovespa, dólar | último fechamento ÷ média simples dos últimos 50 ou 200 pregões − 1 | transformação |
+| 4.3 | Spread de juros reais | CDI, IPCA | (1 + CDI anualizado) ÷ (1 + IPCA 12M) − 1. É o juro real **observado**, não o esperado pelo mercado. | transformação |
+| 5.1 | Data do último dado | todas | data do registro mais recente de cada série | transformação |
+
+**Regra do atraso do IPCA:** as métricas com IPCA usam só os meses já divulgados, e o dashboard mostra o mês de referência. Ex.: "IPCA até set/2026".
+
+**Fora do escopo** (decidido): janela de 60 meses, volatilidade, índice de Sharpe e linha da meta de inflação.
+
+## 6. Esquema das tabelas tratadas (parquet)
+
+Aprovado em 29/10/2026. As tabelas são recalculadas inteiras a cada execução, no fim de `main_daily` e de `main_monthly`.
+
+**Convenções:**
+- Colunas em português.
+- Percentuais em % (ex.: 12,34), com o sufixo `_pct`.
+- Pontos percentuais com o sufixo `_pp`.
+- `pct_do_cdi` já é percentual do CDI (85 = "85% do CDI").
+- Cada série fica no próprio calendário, sem preencher dias.
+
+### Silver (`data/processed/silver/`)
+
+| Tabela | Colunas |
+|---|---|
+| `cdi` | `data`, `taxa_diaria_pct`, `indice` |
+| `ipca` | `mes_referencia`, `variacao_mensal_pct`, `indice` |
+| `dolar_ptax` | `data`, `ptax_venda` |
+| `ibovespa` | `data`, `fechamento` |
+
+O `indice` do CDI e o do IPCA começam em 100 e acumulam (1 + taxa/100) a cada período. Se houver data repetida na bronze, fica o registro do arquivo de ingestão mais recente.
+
+### Gold (`data/processed/gold/`)
+
+| Tabela | Uma linha por | Colunas | Métricas (seção 5) |
+|---|---|---|---|
+| `cdi_diario` | data | `data`, `indice`, `cdi_anualizado_pct` | 2.5 |
+| `dolar_ptax_diario` | data | `data`, `ptax_venda`, `var_d1_pct`, `mm50`, `mm200`, `dist_mm50_pct`, `dist_mm200_pct`, `min_12m`, `max_12m` | 1.1, 3.1, 4.2 |
+| `ibovespa_diario` | data | `data`, `fechamento`, `var_d1_pct`, `mm50`, `mm200`, `dist_mm50_pct`, `dist_mm200_pct`, `min_12m`, `max_12m`, `dist_max_5a_pct` | 1.1, 3.1, 3.2, 4.2 |
+| `ibovespa_usd_diario` | data em comum | `data`, `ibovespa`, `ptax_venda`, `ibovespa_usd` | 2.3 |
+| `rentabilidade` | série × janela × tipo | `serie`, `janela` (`mes`, `ano`, `12m`, `24m`, `36m`), `tipo` (`nominal`, `real`), `data_inicio`, `data_fim`, `rotulo`, `retorno_pct`, `excesso_cdi_pp`, `pct_do_cdi` | 1.2, 1.3, 1.4, 2.1, 2.2, 2.4 |
+| `retorno_anual` | série × ano | `serie`, `ano`, `retorno_pct`, `ano_completo` | 1.5 |
+| `ipca_mensal` | mês | `mes_referencia`, `ipca_mensal_pct`, `ipca_12m_pct`, `ipca_anualizado_mes_pct` | 2.6, 4.1 |
+| `ultimo_dado` | série | `serie`, `data_ultimo_dado`, `ultimo_valor` | 5.1 |
+| `juros_reais` | 1 linha | `data_referencia`, `cdi_anualizado_pct`, `mes_referencia_ipca`, `ipca_12m_pct`, `spread_juros_reais_pct` | 4.3 |
+
+Regras da `rentabilidade`:
+- `tipo = real` só existe para CDI e Ibovespa, alinhado aos meses fechados do último IPCA.
+- `excesso_cdi_pp` e `pct_do_cdi` só aparecem nas linhas do Ibovespa.
+- `pct_do_cdi` só é preenchido quando os dois retornos são positivos.
+- O `rotulo` descreve o período (ex.: "12M até set/2026").
+
+As métricas 1.6 (base 100), 2.7 (simulação de R$ 1.000.000,00) e 3.3 (drawdown máximo) são calculadas no dashboard a partir das tabelas diárias.
+
+---
+
 ## Registro de decisões
 
 > Somente decisões **aprovadas** entram aqui.
@@ -220,6 +297,22 @@ Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um d
 | 2026-10-28 | Além dos horários fixos, o crontab roda os dois fluxos **ao ligar a máquina** (`@reboot`), 2 minutos depois do boot. | A máquina nem sempre está ligada às 09:00. Rodar ao ligar atualiza os dados assim que possível; a carga incremental busca os dias perdidos. Os 2 minutos dão tempo para a rede conectar. Limitação: o `@reboot` não roda ao voltar da suspensão. | ✅ |
 | 2026-10-29 | `fetch_sgs` trata como "sem dado" qualquer resposta com `Value(s) not found` no corpo, seja qual for o status HTTP. | O SGS devolveu "sem dado" com HTTP 200 para o IPCA, e o pipeline registrou isso como erro. | ✅ |
 | 2026-10-29 | Quando o período pedido ao SGS tem um dia só, a `dataFinal` enviada é o dia seguinte. | O SGS passou a recusar `dataInicial` = `dataFinal` (HTTP 400) e aceita uma `dataFinal` futura, devolvendo só o que existe. | ✅ |
+| 2026-10-29 | Métricas do dashboard aprovadas, com os ajustes propostos (ver seção 5). Saem do escopo a janela de 60 meses, a volatilidade, o índice de Sharpe e a meta de inflação. A simulação passa a ser de R$ 1.000.000,00. | A análise mostrou que as métricas com "⚠️ ajuste" tinham problemas: subtração no lugar de divisão nos retornos reais, base errada do YTD, "% do CDI" com retornos negativos e "máxima histórica" com só 5 anos de dados. A janela de 60 meses não teria histórico. | ✅ |
+| 2026-10-29 | Dias sem dado (fins de semana, feriados e feriados que não coincidem entre B3 e BCB) são tratados na **camada silver**. A estrutura do dashboard não está sendo definida agora. | O dashboard e as métricas dependem de séries já alinhadas. A silver é a camada de dados limpos e padronizados. | ✅ |
+| 2026-10-29 | Calendário na silver: **cada série fica só com os dias em que tem dado**, sem preencher valores. Métricas que exigem as duas séries **na mesma data** (Ibovespa em dólar) usam só as datas em comum. | Nenhum dado é inventado, e as métricas de uma série só (D-1, médias móveis, mínima e máxima) ficam corretas. Consequência aceita: o Ibovespa em dólar não existe nos feriados que não coincidem entre B3 e BCB. | ✅ |
+| 2026-10-29 | Quando a data de referência de uma janela (mês, ano, 12M, 24M, 36M) cai num dia sem dado na série, usa-se o **último dado anterior** a essa data. Ex.: 12M a partir de um sábado usa a sexta anterior, e o YTD usa o último pregão ou dia útil de dezembro. | É a convenção do mercado ("fechamento do ano anterior", "valor de 12 meses atrás") e não deixa nenhum dia de retorno de fora da janela. | ✅ |
+| 2026-10-29 | Conciliação diária × mensal: nas métricas reais (ganho real do CDI e retorno real do Ibovespa), CDI e Ibovespa são cortados **nos mesmos meses fechados** do último IPCA divulgado, com o rótulo do mês de referência (ex.: "12M até set/2026"). | Os períodos ficam idênticos. Comparar CDI até ontem com IPCA até o mês anterior misturaria um mês de rendimento sem a inflação correspondente. | ✅ |
+| 2026-10-29 | O spread de juros reais (4.3) usa o **CDI anualizado do último dia útil** contra o **IPCA 12M mais recente**, sem o alinhamento por mês do IPCA. | É uma "foto" do juro real atual (ex-post). Alinhado pelos meses do IPCA, ele seria uma cópia do ganho real do CDI em 12M. | ✅ |
+| 2026-10-29 | As métricas reais (2.1 ganho real do CDI e 2.2 retorno real do Ibovespa) são calculadas em **todas as janelas nominais**: mês, ano, 12M, 24M e 36M, sempre alinhadas aos meses fechados do último IPCA divulgado (ex.: "mês" = set/2026; "ano" = jan a set/2026). | Mesma leitura das métricas nominais, em termos reais. | ✅ |
+| 2026-10-29 | Camadas tratadas em pastas separadas: `data/processed/silver/` (séries limpas e tipadas, uma por série, cada uma no próprio calendário) e `data/processed/gold/` (métricas). | Mudar uma métrica não afeta a limpeza, e a silver pode ser reaproveitada. | ✅ |
+| 2026-10-29 | A silver e a gold são **recalculadas inteiras** a cada execução, a partir de toda a bronze. Se houver data repetida na bronze, fica o registro do arquivo de ingestão mais recente. | Volume pequeno (cerca de 5 mil linhas), resultado sempre consistente. A carga incremental fica na extração, onde evita chamadas às fontes. | ✅ |
+| 2026-10-29 | A transformação roda **no fim dos dois fluxos** (`main_daily` e `main_monthly`). | Garante a ideia de pipeline: todo dado novo atualiza a silver e a gold. | ✅ |
+| 2026-10-29 | Nomes de colunas em **português**, simples e coerentes com o dado (ex.: `data`, `fechamento`, `ptax_venda`). | Coerente com os nomes das séries. | ✅ |
+| 2026-10-29 | Indicadores diários da gold com **uma tabela por série** (no lugar de uma tabela única com a coluna `serie`). | Cada tabela tem só as colunas que fazem sentido para a série. | ✅ |
+| 2026-10-29 | Só ficam na silver e na gold os dados com utilidade. As colunas `Dividends` e `Stock Splits` do Ibovespa saem (são sempre 0 num índice). | Evitar dados sem uso. | ✅ |
+| 2026-10-29 | Percentuais guardados **em %** (ex.: 12,34), com o sufixo **`_pct`** no nome da coluna. Na silver, CDI e IPCA ficam em % como vêm do SGS. A conversão para fração acontece só dentro das contas. | O nome e o valor batem, e o dashboard só acrescenta o símbolo "%". | ✅ |
+| 2026-10-29 | A silver do Ibovespa guarda só `data` e `fechamento`. `abertura`, `maxima`, `minima` e `volume` continuam só na bronze. | Nenhuma métrica aprovada usa essas colunas; elas podem ser recuperadas da bronze se for preciso. | ✅ |
+| 2026-10-29 | Esquema das tabelas silver e gold aprovado (seção 6), com sufixo `_pp` para pontos percentuais e a coluna `pct_do_cdi` sem sufixo. | Fecha a estrutura de dados da Fase 3 antes da implementação. | ✅ |
 | 2026-10-28 | A saída do terminal das execuções do cron é descartada (`> /dev/null 2>&1`). | Os erros de extração já ficam em `log/`. | ✅ |
 | 2026-10-28 | `requirements.txt` gerado de novo com as dependências **importadas diretamente** pelo código e pelos testes, todas com versão fixa: `pyspark`, `requests`, `pytest`, `yfinance`, `pandas` e `curl_cffi`. | `pandas` e `curl_cffi` vinham só como dependências do yfinance, mas passaram a ser importados direto pelo código: `pandas` na conversão para JSON e `curl_cffi` na detecção dos erros de rede do yfinance. | ✅ |
 | 2026-10-28 | Os itens pendentes da Fase 0 (estudo dos indicadores, unidades e limites das fontes, calendários) ficam para depois que a camada silver estiver pronta. | Escolha do responsável pelo projeto. | ✅ |

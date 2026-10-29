@@ -83,10 +83,30 @@ Todas as decisões abaixo dependem de aprovação.
 
 ## Fase 3 — Transformação (T) ⬜
 
-- ⬜ Padronizar datas e tipos.
-- 🔶 Tratamento de dias sem dado (fins de semana, feriados, faltantes).
-- 🔶 Como conciliar séries diárias e mensal.
-- 🔶 Quais métricas calcular (ex.: retornos acumulados, variação em 12 meses, base 100, ganho real etc.).
+- ⬜ Implementar a silver em `src/transform.py`: datas e tipos padronizados, deduplicação e índices acumulados.
+- ⬜ Implementar a gold em `src/transform.py`.
+- ⬜ Chamar a transformação no fim de `main_daily` e `main_monthly`.
+- ⬜ Testes da transformação.
+- ✅ Tratamento de dias sem dado (fins de semana, feriados, faltantes): é feito na camada silver, e cada série fica só com os dias em que tem dado, sem preenchimento.
+  - ✅ Ibovespa em dólar só nas datas em comum entre Ibovespa e PTAX.
+  - ✅ Quando a data de referência de uma janela cai em dia sem dado, usa-se o último dado anterior a ela.
+- ✅ Como conciliar séries diárias e mensal: nas métricas reais, CDI e Ibovespa são cortados nos mesmos meses fechados do último IPCA divulgado.
+- ✅ Quais métricas calcular: ver [CONTEXT.md, seção 5](CONTEXT.md#5-métricas-aprovadas-camada-silvergold).
+  - ✅ CDI e IPCA convertidos em índice acumulado antes das variações.
+  - ✅ Métricas com IPCA usam só os meses já divulgados, com o mês de referência exibido.
+  - ✅ Base 100, simulação de R$ 1.000.000,00 e drawdown máximo calculados no dashboard (dependem do filtro).
+  - ✅ Métricas reais em todas as janelas nominais (mês, ano, 12M, 24M, 36M), alinhadas aos meses do IPCA.
+  - ✅ Spread de juros reais: CDI anualizado do último dia útil contra o IPCA 12M mais recente.
+- ✅ Estrutura das tabelas tratadas em parquet.
+  - ✅ Pastas `data/processed/silver/` e `data/processed/gold/`.
+  - ✅ Silver e gold recalculadas inteiras a cada execução.
+  - ✅ A transformação roda no fim de `main_daily` e de `main_monthly`.
+  - ✅ Colunas com nomes em português.
+  - ✅ Uma tabela de indicadores diários por série na gold.
+  - ✅ Só dados úteis: saem `Dividends` e `Stock Splits` do Ibovespa.
+  - ✅ Percentuais em %, com sufixo `_pct`.
+  - ✅ Ibovespa na silver só com `data` e `fechamento`.
+  - ✅ Esquema final das tabelas: ver [CONTEXT.md, seção 6](CONTEXT.md#6-esquema-das-tabelas-tratadas-parquet).
 - ⬜ Documentar cada decisão no README.
 
 ## Fase 4 — Carga (L) ⬜
