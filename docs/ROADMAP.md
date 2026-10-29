@@ -35,7 +35,7 @@ Objetivo: entender cada indicador antes de manipulá-lo.
 Todas as decisões abaixo dependem de aprovação.
 
 - ✅ Estrutura de pastas (ver registro de decisões em [CONTEXT.md](CONTEXT.md#registro-de-decisões)).
-- ✅ Linguagem e dependências: Python com PySpark, requests, yfinance, pandas, curl_cffi e pytest (`requirements.txt` + `.venv`).
+- ✅ Linguagem e dependências: Python com pandas (transformação), pyarrow (parquet), requests, yfinance, curl_cffi e pytest (`requirements.txt` + `.venv`). O PySpark foi substituído pelo pandas em 29/10/2026.
 - ✅ Formato da base de carga: parquet.
 - 🔶 Modelagem dos dados (granularidade, tabelas/arquivos brutos vs. tratados).
 - 🔶 Ferramenta do dashboard (Streamlit, Power BI, Excel, HTML ou outra).
@@ -83,7 +83,7 @@ Todas as decisões abaixo dependem de aprovação.
 
 ## Fase 3 — Transformação (T) ⬜
 
-- ⬜ Implementar a silver em `src/transform.py`: datas e tipos padronizados, deduplicação e índices acumulados.
+- ⬜ Implementar a silver em `src/transform.py` com pandas: datas e tipos padronizados, deduplicação e índices acumulados.
 - ⬜ Implementar a gold em `src/transform.py`.
 - ⬜ Chamar a transformação no fim de `main_daily` e `main_monthly`.
 - ⬜ Testes da transformação.

@@ -40,10 +40,10 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 
 ## Tecnologias
 
-- **Python 3.12.3** com **PySpark** para o processamento dos dados (requer Java instalado).
+- **Python 3.12.3** com **pandas** para a transformação dos dados.
 - **requests** para as chamadas à API SGS do Banco Central.
 - **yfinance** para a cotação do Ibovespa.
-- **pandas** (vem com o yfinance) para converter o retorno do Ibovespa em JSON.
+- **pyarrow** para gravar e ler os arquivos parquet.
 - **pytest** para os testes.
 - Dados armazenados em **parquet**.
 - Agendamento via **crontab**.
