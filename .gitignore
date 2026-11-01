@@ -15,11 +15,5 @@ env/
 .idea/
 .DS_Store
 
-# Dados
-data/
-
-# Logs
-log/
-
 # Testes
 .pytest_cache/

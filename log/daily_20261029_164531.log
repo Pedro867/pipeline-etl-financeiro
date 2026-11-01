@@ -1,0 +1,1 @@
+2026-10-29 16:45:32 | ERROR | dolar_ptax: falha na extração (HTTPError: 400 Client Error: Bad Request for url: https://api.bcb.gov.br/dados/serie/bcdata.sgs.1/dados?formato=json&dataInicial=29/10/2026&dataFinal=29/10/2026)
