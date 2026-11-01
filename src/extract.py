@@ -104,11 +104,15 @@ def fetch_yfinance(ticker: str, start: date, end: date) -> list[dict]:
     return _with_retry(request, ticker)
 
 
-def run_extraction(flow: str, series: dict[str, Fetcher], monthly: bool = False) -> None:
-    """Extrai cada série para a camada bronze. A falha de uma série não interrompe as outras."""
+def run_extraction(flow: str, series: dict[str, Fetcher], monthly: bool = False) -> list[str]:
+    """Extrai cada série para a camada bronze. A falha de uma série não interrompe as outras.
+
+    Retorna as séries que falharam (lista vazia se tudo deu certo).
+    """
     started_at = datetime.now()
     configure_logging(flow, started_at)
     today = started_at.date()
+    failed = []
 
     for serie, fetch in series.items():
         try:
@@ -117,6 +121,7 @@ def run_extraction(flow: str, series: dict[str, Fetcher], monthly: bool = False)
             data = fetch(start, today)
         except Exception as error:
             logger.error("%s: falha na extração (%s: %s)", serie, type(error).__name__, error)
+            failed.append(serie)
             continue
 
         if not data:
@@ -125,3 +130,5 @@ def run_extraction(flow: str, series: dict[str, Fetcher], monthly: bool = False)
 
         path = save_json(data, serie, today)
         logger.info("%s: %d registros salvos em %s", serie, len(data), path)
+
+    return failed

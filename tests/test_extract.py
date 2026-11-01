@@ -490,3 +490,19 @@ def test_run_extraction_with_real_fetchers_end_to_end(raw_dir, log_dir, fixed_no
     assert read_json(raw_dir / "dolar_ptax" / "dolar_ptax_20261028.json") == SGS_DATA
     assert [r["Date"] for r in read_json(raw_dir / "ibovespa" / "ibovespa_20261028.json")] == ["2026-10-26", "2026-10-27"]
     assert list(log_dir.iterdir()) == []
+
+
+def test_run_extraction_returns_failed_series(fixed_now):
+    fixed_now(NOW)
+
+    failed = extract.run_extraction(
+        "daily", {"cdi": recorder(SGS_DATA), "dolar_ptax": recorder(ValueError("x")), "ibovespa": recorder(KeyError("y"))}
+    )
+
+    assert failed == ["dolar_ptax", "ibovespa"]
+
+
+def test_run_extraction_no_data_is_not_a_failure(fixed_now):
+    fixed_now(NOW)
+
+    assert extract.run_extraction("daily", {"cdi": recorder([]), "dolar_ptax": recorder(SGS_DATA)}) == []

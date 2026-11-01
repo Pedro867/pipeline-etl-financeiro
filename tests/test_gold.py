@@ -414,3 +414,29 @@ def test_run_transformation_skips_gold_when_silver_fails(monkeypatch):
     transform.run_transformation()
 
     assert calls == []
+
+
+def test_run_transformation_returns_true_on_success(monkeypatch):
+    monkeypatch.setattr(transform, "build_silver", lambda: {})
+    monkeypatch.setattr(transform, "build_gold", lambda silver: {})
+
+    assert transform.run_transformation() is True
+
+
+def test_run_transformation_returns_false_on_silver_failure(monkeypatch):
+    def broken():
+        raise OSError("disco cheio")
+
+    monkeypatch.setattr(transform, "build_silver", broken)
+
+    assert transform.run_transformation() is False
+
+
+def test_run_transformation_returns_false_on_gold_failure(monkeypatch):
+    def broken(silver):
+        raise ValueError("conta errada")
+
+    monkeypatch.setattr(transform, "build_silver", lambda: {})
+    monkeypatch.setattr(transform, "build_gold", broken)
+
+    assert transform.run_transformation() is False

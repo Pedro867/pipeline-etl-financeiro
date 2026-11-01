@@ -1,0 +1,63 @@
+# Pipeline de indicadores de mercado: extração (bronze) → silver → gold, com os dados versionados no repositório.
+name: Pipeline de indicadores
+
+on:
+  schedule:
+    # Horários em UTC (Brasília = UTC−3). Minuto 17 para fugir dos horários cheios, que costumam atrasar.
+    - cron: "17 12 * * *"     # fluxo diário (CDI, PTAX, Ibovespa): todos os dias, 09:17 em Brasília
+    - cron: "17 13 8-20 * *"  # fluxo mensal (IPCA): dias 8 a 20, 10:17 em Brasília
+  workflow_dispatch:
+    inputs:
+      fluxo:
+        description: "Fluxo a executar"
+        type: choice
+        options: [daily, monthly, ambos]
+        default: ambos
+
+permissions:
+  contents: write  # para versionar data/ e log/
+
+# Uma execução por vez, para dois commits de dados não disputarem o push.
+concurrency:
+  group: pipeline
+  cancel-in-progress: false
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-24.04
+    env:
+      TZ: America/Sao_Paulo  # a data local nomeia os arquivos da bronze e dos logs
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.3"
+          cache: pip
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Fluxo diário
+        if: github.event.schedule == '17 12 * * *' || inputs.fluxo == 'daily' || inputs.fluxo == 'ambos'
+        run: python -m src.main_daily
+
+      # Os passos abaixo rodam mesmo se um fluxo anterior falhar (`!cancelled()`): os dados das séries
+      # que deram certo e o log do erro são versionados, e a execução termina marcada como falha.
+      - name: Fluxo mensal
+        if: "!cancelled() && (github.event.schedule == '17 13 8-20 * *' || inputs.fluxo == 'monthly' || inputs.fluxo == 'ambos')"
+        run: python -m src.main_monthly
+
+      - name: Versionar dados e logs
+        if: "!cancelled()"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data log
+          if git diff --cached --quiet; then
+            echo "Nenhuma mudança em data/ ou log/."
+            exit 0
+          fi
+          git commit -m "data: atualização automática do pipeline ($(date +'%Y-%m-%d %H:%M'))"
+          git pull --rebase
+          git push

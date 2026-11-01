@@ -27,14 +27,53 @@ def test_monthly_series_names_and_sources():
 @pytest.mark.filterwarnings("ignore:.*found in sys.modules:RuntimeWarning")
 def test_entry_points_run_extraction_then_transformation(monkeypatch):
     calls = []
-    monkeypatch.setattr(extract, "run_extraction", lambda *args, **kwargs: calls.append(("extract", args, kwargs)))
-    monkeypatch.setattr(transform, "run_transformation", lambda: calls.append(("transform",)))
 
-    runpy.run_module("src.main_daily", run_name="__main__")
-    runpy.run_module("src.main_monthly", run_name="__main__")
+    def fake_extraction(*args, **kwargs):
+        calls.append(("extract", args, kwargs))
+        return []
+
+    def fake_transformation():
+        calls.append(("transform",))
+        return True
+
+    monkeypatch.setattr(extract, "run_extraction", fake_extraction)
+    monkeypatch.setattr(transform, "run_transformation", fake_transformation)
+
+    for module in ["src.main_daily", "src.main_monthly"]:
+        with pytest.raises(SystemExit) as exit_info:
+            runpy.run_module(module, run_name="__main__")
+        assert exit_info.value.code == 0
 
     # O runpy recria o SERIES (e os `partial`), então comparamos o fluxo, as séries e os parâmetros.
     assert [c[0] for c in calls] == ["extract", "transform", "extract", "transform"]
     assert calls[0][1][0] == "daily" and list(calls[0][1][1]) == list(main_daily.SERIES) and calls[0][2] == {}
     assert calls[2][1][0] == "monthly" and list(calls[2][1][1]) == list(main_monthly.SERIES)
     assert calls[2][2] == {"monthly": True}
+
+
+@pytest.mark.filterwarnings("ignore:.*found in sys.modules:RuntimeWarning")
+@pytest.mark.parametrize("module", ["src.main_daily", "src.main_monthly"])
+@pytest.mark.parametrize(
+    "failed, transformed, code",
+    [([], True, 0), (["cdi"], True, 1), ([], False, 1), (["cdi"], False, 1)],
+)
+def test_entry_points_exit_code(monkeypatch, module, failed, transformed, code):
+    monkeypatch.setattr(extract, "run_extraction", lambda *args, **kwargs: failed)
+    monkeypatch.setattr(transform, "run_transformation", lambda: transformed)
+
+    with pytest.raises(SystemExit) as exit_info:
+        runpy.run_module(module, run_name="__main__")
+
+    assert exit_info.value.code == code
+
+
+@pytest.mark.filterwarnings("ignore:.*found in sys.modules:RuntimeWarning")
+def test_transformation_runs_even_when_extraction_fails(monkeypatch):
+    calls = []
+    monkeypatch.setattr(extract, "run_extraction", lambda *args, **kwargs: ["ibovespa"])
+    monkeypatch.setattr(transform, "run_transformation", lambda: calls.append("transform") or True)
+
+    with pytest.raises(SystemExit):
+        runpy.run_module("src.main_daily", run_name="__main__")
+
+    assert calls == ["transform"]

@@ -1,5 +1,6 @@
 """Fluxo mensal: IPCA. Executar com `python -m src.main_monthly`."""
 
+import sys
 from functools import partial
 
 from src.extract import fetch_sgs, run_extraction
@@ -10,5 +11,7 @@ SERIES = {
 }
 
 if __name__ == "__main__":
-    run_extraction("monthly", SERIES, monthly=True)
-    run_transformation()
+    failed = run_extraction("monthly", SERIES, monthly=True)
+    transformed = run_transformation()
+    # Código de saída 1 quando houve erro: o GitHub Actions marca a execução como falha e avisa por e-mail.
+    sys.exit(1 if failed or not transformed else 0)

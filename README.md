@@ -46,7 +46,7 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 - **pyarrow** para gravar e ler os arquivos parquet.
 - **pytest** para os testes.
 - Dados armazenados em **parquet**.
-- Agendamento via **crontab**.
+- Agendamento via **GitHub Actions**.
 
 ## Como executar
 
@@ -62,25 +62,19 @@ Cada fluxo faz a extração (bronze) e, em seguida, recalcula a camada silver (`
 
 ## Agendamento
 
-As execuções são agendadas com o `crontab`, no horário local da máquina (`America/Sao_Paulo`):
+O pipeline roda no **GitHub Actions** ([.github/workflows/pipeline.yml](.github/workflows/pipeline.yml)), sem depender de uma máquina ligada. Ao fim de cada execução, o workflow faz commit de `data/` e `log/` no repositório. Assim, a bronze fica guardada para a carga incremental da próxima execução, e a gold fica disponível para o dashboard.
 
-| Fluxo | Quando | Por quê |
-|---|---|---|
-| Diário (CDI, PTAX, Ibovespa) | Todos os dias, às 09:00 | Antes da abertura da B3, com todas as séries em D-1: o CDI sai em D+1, e o Ibovespa é buscado só até o dia anterior, já consolidado. Nos fins de semana a execução não encontra dado novo e não salva arquivo. |
-| Mensal (IPCA) | Dias 8 a 20, às 10:00 | O IBGE divulga o IPCA por volta do dia 10, às 9h, mas o dia exato muda de mês para mês. Antes da divulgação, a execução não encontra dado e não salva arquivo; depois, entra no máximo 1 dia após a divulgação. |
+| Fluxo | Quando (Brasília) | Cron (UTC) | Por quê |
+|---|---|---|---|
+| Diário (CDI, PTAX, Ibovespa) | Todos os dias, 09:17 | `17 12 * * *` | Antes da abertura da B3, com todas as séries em D-1: o CDI sai em D+1, e o Ibovespa é buscado só até o dia anterior, já consolidado. Nos fins de semana a execução não encontra dado novo e não salva arquivo. |
+| Mensal (IPCA) | Dias 8 a 20, 10:17 | `17 13 8-20 * *` | O IBGE divulga o IPCA por volta do dia 10, às 9h, mas o dia exato muda de mês para mês. Antes da divulgação, a execução não encontra dado e não salva arquivo; depois, entra no máximo 1 dia após a divulgação. |
 
-Linhas do crontab (`crontab -e`), trocando `<caminho-do-projeto>` pelo caminho absoluto do projeto:
-
-```cron
-# Pipeline de indicadores: fluxo diário (CDI, PTAX, Ibovespa)
-0 9 * * * cd <caminho-do-projeto> && .venv/bin/python -m src.main_daily > /dev/null 2>&1
-# Pipeline de indicadores: fluxo mensal (IPCA)
-0 10 8-20 * * cd <caminho-do-projeto> && .venv/bin/python -m src.main_monthly > /dev/null 2>&1
-# Pipeline de indicadores: roda os dois fluxos ao ligar a máquina (espera 2 min pela internet)
-@reboot sleep 120; cd <caminho-do-projeto> && .venv/bin/python -m src.main_daily > /dev/null 2>&1; .venv/bin/python -m src.main_monthly > /dev/null 2>&1
-```
-
-A saída do terminal é descartada. Os erros de extração ficam em `log/<fluxo>_YYYYMMDD_HHMMSS.log`. Se a máquina estiver desligada no horário, o cron não roda a execução depois. Por isso, a linha `@reboot` roda os dois fluxos sempre que a máquina liga, e a carga incremental busca os dias perdidos. O `@reboot` **não** roda ao voltar da suspensão (tampa fechada); nesse caso, os dados são atualizados na próxima execução agendada ou na próxima vez que a máquina for ligada.
+- **Fuso horário:** o agendamento do GitHub é em UTC (Brasília = UTC−3). O workflow define `TZ=America/Sao_Paulo` para que os arquivos sejam nomeados com a data de Brasília.
+- **Minuto 17:** o GitHub não garante o horário exato, e os horários cheios costumam atrasar mais. Se uma execução atrasar ou for pulada, a carga incremental busca os dias perdidos na seguinte.
+- **Execução manual:** na aba **Actions** do GitHub, escolha "Pipeline de indicadores" → **Run workflow** e selecione o fluxo (`daily`, `monthly` ou `ambos`).
+- **Falhas:** se alguma série falhar na extração, ou se a transformação falhar, a execução termina **marcada como falha** e o GitHub avisa por e-mail. Mesmo assim, os dados das séries que deram certo e o log do erro são versionados.
+- **Uma execução por vez:** duas execuções nunca rodam ao mesmo tempo, para os commits de dados não se chocarem.
+- **Logs:** o log completo de cada execução fica na aba Actions. Os erros de extração também ficam versionados em `log/<fluxo>_YYYYMMDD_HHMMSS.log`.
 
 ## Testes
 
@@ -132,7 +126,9 @@ pipeline-etl-financeiro/
 │   ├── test_transform.py
 │   ├── test_gold.py
 │   └── test_main.py
-├── log/                # logs de erro (fora do Git, criada pelo pipeline)
+├── log/                # logs de erro (versionados, criados pelo pipeline)
+├── .github/workflows/
+│   └── pipeline.yml    # agendamento no GitHub Actions
 ├── .gitignore
 ├── README.md
 └── requirements.txt

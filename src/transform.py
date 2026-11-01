@@ -355,17 +355,20 @@ def build_gold(silver: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
     return tables
 
 
-def run_transformation() -> None:
+def run_transformation() -> bool:
     """Etapa de transformação do pipeline, chamada no fim dos fluxos de ingestão.
 
     Uma falha é registrada no log da execução, sem afetar a bronze já gravada.
+    Retorna False se a silver ou a gold falhar.
     """
     try:
         silver = build_silver()
     except Exception as error:
         logger.error("transformação: falha na silver (%s: %s)", type(error).__name__, error)
-        return
+        return False
     try:
         build_gold(silver)
     except Exception as error:
         logger.error("transformação: falha na gold (%s: %s)", type(error).__name__, error)
+        return False
+    return True

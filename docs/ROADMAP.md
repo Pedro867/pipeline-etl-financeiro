@@ -40,13 +40,15 @@ Todas as decisões abaixo dependem de aprovação.
 - 🔶 Modelagem dos dados (granularidade, tabelas/arquivos brutos vs. tratados).
 - 🔶 Ferramenta do dashboard (Streamlit, Power BI, Excel, HTML ou outra).
 - ✅ Forma de execução do pipeline, a partir da raiz do projeto: `python -m src.main_daily` (séries diárias) e `python -m src.main_monthly` (IPCA).
-- ✅ Agendamento: crontab.
-  - ✅ Frequência e horário definidos (ver [README](../README.md#agendamento)): fluxo diário todos os dias às 09:00 e fluxo mensal nos dias 8 a 20, às 10:00.
-  - ✅ Linhas instaladas no crontab da máquina em 28/10/2026, antecipando a decisão de instalar só com o ETL pronto. Execução de teste às 21:56 bem-sucedida.
-  - ✅ Linha de teste (`56 21 * * *`) removida do crontab.
-  - ✅ Execução ao ligar a máquina (`@reboot`, 2 min de espera), para não depender de a máquina estar ligada às 09:00.
-  - ⬜ Nos primeiros dias, conferir nos arquivos se a execução das 09:00 já traz o CDI de D-1 e o Ibovespa de D-1 consolidado.
-
+- ✅ Agendamento: **GitHub Actions** (`.github/workflows/pipeline.yml`), substituindo o crontab em 01/11/2026.
+  - ✅ Fluxo diário todos os dias às 09:17 de Brasília (`17 12 * * *` UTC). Fluxo mensal nos dias 8 a 20, às 10:17 (`17 13 8-20 * *` UTC).
+  - ✅ `data/` e `log/` versionados no repositório; o workflow faz o commit ao fim de cada execução.
+  - ✅ Botão de execução manual (`workflow_dispatch`), com escolha do fluxo.
+  - ✅ Crontab local desativado: as linhas foram comentadas com `# DESATIVADO (GitHub Actions)`.
+  - ⬜ Fazer commit e push do workflow e de `data/`/`log/` e confirmar a primeira execução no GitHub (manual e agendada).
+  - ⬜ Nos primeiros dias, conferir nos arquivos se a execução das 09:17 já traz o CDI de D-1 e o Ibovespa de D-1 consolidado.
+  - ⬜ Acompanhar o `YFRateLimitError` do Yahoo nos servidores do GitHub.
+  - ✅ O pipeline termina com código de saída 1 quando alguma série falha na extração ou a transformação falha. O GitHub marca a execução como falha e avisa por e-mail. O fluxo mensal e o commit dos dados rodam mesmo assim.
 ## Fase 2 — Extração (E) ✅
 
 - ✅ `fetch_sgs` em `src/extract.py` (genérica, recebe o código SGS e o período).
@@ -78,7 +80,7 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Confirmado em 29/10/2026: a linha do Ibovespa de D-1 chega consolidada no dia seguinte (28/10 com `Volume` 21.515.700).
 - ✅ IPCA: como o SGS devolve o mês que **contém** a data inicial, na série mensal a busca começa no 1º dia do mês seguinte ao último dado.
 - ✅ Ibovespa: a busca vai só **até ontem**, porque a linha do dia atual vem provisória mesmo depois do fechamento.
-- ✅ Testes automatizados com pytest em `tests/` (177 testes, sem acesso à internet): `pytest` a partir da raiz.
+- ✅ Testes automatizados com pytest em `tests/` (191 testes, sem acesso à internet): `pytest` a partir da raiz.
 - ✅ Horário de execução: fluxo diário todos os dias às 09:00, com todas as séries em D-1. IPCA nos dias 8 a 20, às 10:00. A saída do terminal é descartada.
 
 ## Fase 3 — Transformação (T) ✅
