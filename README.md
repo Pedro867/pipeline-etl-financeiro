@@ -1,4 +1,5 @@
 # Pipeline de Indicadores de Mercado
+[![Pipeline de indicadores](https://github.com/Pedro867/pipeline-etl-financeiro/actions/workflows/pipeline.yml/badge.svg)](https://github.com/Pedro867/pipeline-etl-financeiro/actions/workflows/pipeline.yml)
 
 Pipeline de dados (ETL) que coleta indicadores de mercado em fontes públicas, trata as séries e as organiza em uma base que alimenta um dashboard para a equipe de **Inteligência Comercial**.
 
