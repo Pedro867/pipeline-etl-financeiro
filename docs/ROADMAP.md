@@ -50,7 +50,7 @@ Todas as decisões abaixo dependem de aprovação.
   - ✅ O pipeline termina com código de saída 1 quando alguma série falha na extração ou a transformação falha. O GitHub marca a execução como falha e avisa por e-mail. O fluxo mensal e o commit dos dados rodam mesmo assim.
   - ✅ Badge do workflow no topo do README.
 
-## Fase 2 — Extração (E) 🔄
+## Fase 2 — Extração (E) ✅
 
 - ✅ `fetch_sgs` em `src/extract.py` (genérica, recebe o código SGS e o período).
 - ✅ `fetch_yfinance` em `src/extract.py` (chama a conversão do `utils.py` e retorna JSON, como o `fetch_sgs`).
@@ -63,7 +63,7 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ CDI, Dólar PTAX e Ibovespa (séries diárias) via `src/main_daily.py`.
 - ✅ IPCA (série mensal) via `src/main_monthly.py`.
 - ✅ Reexecução no mesmo dia sobrescreve o arquivo do dia (a data inicial é calculada pelo último arquivo **anterior** a hoje).
-- ✅ Verificar o que a API SGS retorna quando o período pedido não tem dado (ex.: feriado): **HTTP 404** com `"Value(s) not found"` (ver [CONTEXT.md](CONTEXT.md#api-sgs-banco-central)).
+- ✅ Verificar o que a API SGS retorna quando o período pedido não tem dado (ex.: feriado): **HTTP 404 ou 200** com `"Value(s) not found"` no corpo (ver [CONTEXT.md](CONTEXT.md#api-sgs-banco-central)).
   - ✅ Quando não há dado, nenhum arquivo é salvo. A próxima execução pede de novo a partir do mesmo ponto.
 - ✅ Tratamento de erros e retentativas nas chamadas às fontes (ver [CONTEXT.md](CONTEXT.md#mapa-de-erros-das-fontes)).
   - ✅ Mapear os tipos de erro de cada fonte.
@@ -119,9 +119,9 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Salvar os dados tratados no formato aprovado na Fase 1: parquet com pyarrow, em `data/processed/silver/` e `data/processed/gold/`.
 - ✅ Garantir que a base alimenta o dashboard: o dashboard lê a gold versionada no repositório.
 
-## Fase 5 — Dashboard 🔄
+## Fase 5 — Dashboard ✅
 
-- 🔶 Público-alvo e perguntas que o dashboard deve responder (adiado em 01/11/2026).
+- ✅ Público-alvo: os **assessores de investimento** (definido em 02/11/2026). As perguntas que o dashboard responde e a visualização que atende cada uma estão no README, seção "Dashboard".
 - ✅ Ferramenta: Streamlit, com gráficos em Plotly, em `dashboard/app.py`.
 - ✅ Primeira versão implementada (01/11/2026): filtro de período no topo e abas Resumo, Comparação, Juros e inflação, Bolsa e Câmbio. Usa todas as métricas aprovadas, inclusive as calculadas no dashboard (base 100, simulação de R$ 1.000.000,00 e drawdown máximo).
   - ✅ Conferida visualmente nos temas claro e escuro (capturas de tela de todas as abas).
@@ -131,12 +131,12 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Ajuste de 02/11/2026: o Resumo virou seção expansível, aberta por padrão.
 - ✅ Ajuste de 02/11/2026: o "?" dos cartões do Resumo explica cada indicador, e a aba Bolsa explica que o Ibovespa é de retorno total.
 
-## Fase 6 — Documentação 🔄
+## Fase 6 — Documentação ✅
 
-- 🔄 README com:
+- ✅ README com:
   - ✅ Como executar o pipeline e o dashboard (seções "Como executar", "Agendamento" e "Dashboard").
   - ✅ Principais decisões de tratamento e suas justificativas (seção "Tratamento dos dados"). As demais ficam no registro de decisões do CONTEXT.
-  - ⬜ Para quem é o dashboard e por que as visualizações atendem esse público.
+  - ✅ Para quem é o dashboard e por que as visualizações atendem esse público (seção "Dashboard": "Para quem é" e "Por que estas visualizações").
 
 ## Fase 7 — Atualização incremental ✅
 

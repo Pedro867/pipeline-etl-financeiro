@@ -21,6 +21,8 @@ O projeto é um **pipeline de dados (ETL)** que:
 3. Organiza-os em uma base;
 4. Alimenta um **dashboard** que apresente essas informações.
 
+**Público-alvo do dashboard:** os **assessores de investimento**, que usam os indicadores para embasar conversas com clientes (definido em 02/11/2026).
+
 O **produto final é o dashboard**. Cada escolha sobre ele (gráficos, comparações, forma de exibir cada informação e ferramenta) é registrada com sua justificativa.
 
 ---
@@ -38,7 +40,7 @@ O **produto final é o dashboard**. Cada escolha sobre ele (gráficos, comparaç
 
 - As séries têm **frequências diferentes** (diárias e mensal) e **naturezas diferentes** (taxas, índices e cotações).
 - Os calendários também diferem: dias úteis do BCB vs. pregões da B3 (feriados podem não coincidir).
-- Como conciliar isso no tratamento e no dashboard **faz parte das decisões a serem tomadas** (pendente de aprovação).
+- Conciliação decidida em 29/10/2026: cada série fica no próprio calendário, as janelas usam o último dado anterior, e as métricas reais são cortadas nos meses do último IPCA divulgado (ver seção 6 e o [Registro de decisões](#registro-de-decisões)).
 
 ### O que cada indicador representa
 
@@ -52,6 +54,7 @@ Estudo da Fase 0 (concluído em 02/11/2026). O dashboard usa um resumo deste tex
 | **Dólar PTAX** | Taxa de câmbio de referência do Banco Central, no mercado atacadista (não é o dólar turismo). O BCB faz quatro consultas aos *dealers* ao longo do dia, descarta as cotações extremas em cada uma e publica a média das quatro. | Referência para derivativos de câmbio, proteção cambial (*hedge*) e liquidação de investimentos internacionais. | Cotação em reais por dólar, com compra e venda, em quatro casas decimais (ex.: PTAX venda R$ 5,0532). |
 
 Consequência para o pipeline: como o Ibovespa já considera o reinvestimento dos dividendos, a comparação com o CDI (que também acumula os rendimentos) é feita em bases iguais, sem somar proventos.
+
 ### API SGS (Banco Central)
 
 URL de consulta:
@@ -102,7 +105,7 @@ Levantado com testes nas fontes em 28/10/2026. A coluna "Retentar?" foi aprovada
 | Código de série inexistente | ⚠️ **HTTP 200** com uma **página HTML** ("Requisição inválida!"), depois de cerca de 30 s | Não: é erro de configuração. O status 200 sozinho não basta; é preciso validar o `Content-Type` ou se o corpo é JSON. |
 | Timeout ou falha de conexão (`requests.Timeout`, `ConnectionError`) | Não observado (esperado em instabilidade) | Sim |
 | Erro do servidor (HTTP 5xx) ou excesso de requisições (429) | Não observado (esperado em instabilidade) | Sim |
-| Corpo que não é JSON, ou JSON fora do formato `[{"data", "valor"}]` | Não observado | A definir |
+| Corpo que não é JSON, ou JSON fora do formato `[{"data", "valor"}]` | Não observado | Não: o `fetch_sgs` trata como erro, sem retentar, e a série é registrada no log como falha |
 
 **yfinance**
 
@@ -168,7 +171,7 @@ Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um d
 
 ### Dashboard
 - Escolher a ferramenta (escolhida: Streamlit), os gráficos e indicadores e como organizá-los.
-- **Explicar no README**: para quem é o dashboard e por que as visualizações respondem bem às necessidades de quem o usa.
+- **Explicar no README**: para quem é o dashboard e por que as visualizações respondem bem às necessidades de quem o usa (feito na seção "Dashboard" do README).
 
 ### Atualização incremental
 - Baixar apenas os dados novos a cada execução.
@@ -180,7 +183,7 @@ Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um d
 - [x] Pipeline ETL funcional (extração, transformação, carga).
 - [x] Base de dados tratada e organizada (bronze, silver e gold).
 - [x] Dashboard.
-- [ ] README documentando as decisões de transformação, o público do dashboard e a justificativa das visualizações.
+- [x] README documentando as decisões de transformação, o público do dashboard e a justificativa das visualizações.
 - [x] Atualização incremental.
 
 ---
@@ -379,6 +382,7 @@ As métricas 1.6 (base 100), 2.7 (simulação de R$ 1.000.000,00) e 3.3 (drawdow
 | 2026-11-02 | O README documenta só as **principais decisões de tratamento** (seção "Tratamento dos dados"), as que mudam um número exibido no dashboard ou a forma de lê-lo, com um link para este registro. | Há dezenas de decisões; listar todas no README o deixaria longo demais para quem só quer entender os números. | ✅ |
 | 2026-11-02 | Estudo dos indicadores da Fase 0 (significado, cálculo, uso pelo assessor e forma de apresentação) registrado na seção 2, "O que cada indicador representa". | Conclui os itens pendentes de estudo da Fase 0 e serve de base para os textos do dashboard. | ✅ |
 | 2026-11-02 | Dashboard: o "?" de cada cartão do Resumo traz um texto mais completo sobre o indicador (o que é, quem calcula, como é usado e o que o número mostra). Na aba Bolsa, a legenda da comparação com o CDI explica que o Ibovespa é um índice de retorno total. | Ajuda quem não é da área a ler os números. Deixa claro que a comparação Ibovespa × CDI é feita em bases iguais. | ✅ |
+| 2026-11-02 | Público-alvo do dashboard: os **assessores de investimento**. O README explica, para cada pergunta do assessor, a visualização que a responde. | Definição do responsável pelo projeto. Conclui a entrega de documentação do dashboard. | ✅ |
 | 2026-10-28 | A saída do terminal das execuções do cron é descartada (`> /dev/null 2>&1`). | Os erros de extração já ficam em `log/`. | ✅ |
 | 2026-10-28 | `requirements.txt` gerado de novo com as dependências **importadas diretamente** pelo código e pelos testes, todas com versão fixa: `pyspark`, `requests`, `pytest`, `yfinance`, `pandas` e `curl_cffi`. | `pandas` e `curl_cffi` vinham só como dependências do yfinance, mas passaram a ser importados direto pelo código: `pandas` na conversão para JSON e `curl_cffi` na detecção dos erros de rede do yfinance. | ✅ |
 | 2026-10-28 | Os itens pendentes da Fase 0 (estudo dos indicadores, unidades e limites das fontes, calendários) ficam para depois que a camada silver estiver pronta. | Escolha do responsável pelo projeto. | ✅ |

@@ -7,14 +7,14 @@ Pipeline de dados (ETL) que coleta indicadores de mercado em fontes públicas, t
 
 ## Contexto
 
-A equipe de Inteligência Comercial acompanha diariamente juros, inflação, câmbio e bolsa para embasar conversas com clientes. Hoje esse acompanhamento é manual.
+A equipe de Inteligência Comercial acompanha diariamente juros, inflação, câmbio e bolsa para que os assessores de investimento embasem as conversas com clientes. Sem automação, esse acompanhamento é manual.
 
 Este projeto automatiza o processo:
 
 1. **Extração:** coleta das séries em fontes públicas.
 2. **Transformação:** padronização e tratamento dos dados.
 3. **Carga:** armazenamento em uma base organizada.
-4. **Dashboard:** visualização final para a equipe comercial (o produto final do projeto).
+4. **Dashboard:** visualização final para os assessores de investimento (o produto final do projeto).
 
 ## Indicadores
 
@@ -36,7 +36,7 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 | **Extração (E)** | Coleta as quatro séries dos últimos 5 anos: as do Banco Central via API SGS e o Ibovespa via `yfinance`. Salva o retorno das fontes em JSON (camada bronze, `data/raw`). |
 | **Transformação (T)** | Padroniza datas e tipos, trata os dias sem dado (fins de semana, feriados, faltantes) e calcula as métricas usadas no dashboard, como retorno acumulado, variação em 12 meses e retorno real (camadas silver e gold). |
 | **Carga (L)** | Grava as tabelas tratadas em parquet (`data/processed/silver` e `data/processed/gold`). |
-| **Dashboard** | Mostra indicadores, comparações e gráficos para a equipe comercial (Streamlit). |
+| **Dashboard** | Mostra indicadores, comparações e gráficos para os assessores de investimento (Streamlit). |
 | **Atualização incremental** | Depois da primeira carga, baixa apenas os dados novos a cada execução. |
 
 ## Tratamento dos dados
@@ -100,13 +100,35 @@ O pipeline roda no **GitHub Actions** ([.github/workflows/pipeline.yml](.github/
 
 ## Dashboard
 
-O dashboard ([dashboard/app.py](dashboard/app.py)) usa Streamlit e Plotly. Ele lê as tabelas da gold e calcula só o que depende do período escolhido: a comparação em base 100, a simulação de R$ 1.000.000,00 e o drawdown máximo. O público e a justificativa das visualizações ainda serão definidos.
+O dashboard ([dashboard/app.py](dashboard/app.py)) usa Streamlit e Plotly. Ele lê as tabelas da gold e calcula só o que depende do período escolhido: a comparação em base 100, a simulação de R$ 1.000.000,00 e o drawdown máximo.
 
 - **Local:** `streamlit run dashboard/app.py`, a partir da raiz do projeto.
 - **Nuvem:** **[pipeline-etl-financeiro.streamlit.app](https://pipeline-etl-financeiro.streamlit.app/)**, no Streamlit Community Cloud, apontando para `dashboard/app.py`. O app lê a gold versionada no repositório e se atualiza a cada commit do pipeline.
 - **Organização:** o **Resumo** fica no topo, numa seção expansível que começa aberta (indicadores do dia, rentabilidade nominal e real e data do último dado), e não depende de período. Abaixo dele, o filtro de período (12M, 24M, 36M, no ano, tudo ou personalizado) vale para as abas **Comparação**, **Juros e inflação**, **Bolsa** e **Câmbio**.
 - **Simulação de R$ 1.000.000,00:** mostra quanto o valor aplicado no início do período vale hoje no Ibovespa, no CDI e no dólar. O IPCA aparece como **"Corrigido pelo IPCA"**: o valor que os R$ 1.000.000,00 precisariam ter hoje só para manter o poder de compra.
 - **Cores:** cada indicador mantém a mesma cor em todos os gráficos (Ibovespa azul, CDI laranja, dólar verde, IPCA amarelo), nos temas claro e escuro. Todo gráfico tem legenda e uma tabela com os dados ("Ver dados").
+
+### Para quem é
+
+O dashboard é feito para os **assessores de investimento**. Eles usam juros, inflação, bolsa e câmbio para embasar conversas com clientes: comparar um produto de renda fixa com o CDI, mostrar se a carteira teve ganho real, explicar um movimento da bolsa ou a exposição ao dólar. O uso típico é uma consulta rápida antes de uma reunião ou ligação, e a explicação do número para o cliente.
+
+### Por que estas visualizações
+
+| Pergunta do assessor | Visualização | Por que atende |
+|---|---|---|
+| Como estão os indicadores hoje? | **Resumo** no topo, aberto por padrão: CDI anualizado, IPCA 12 meses, PTAX venda e Ibovespa, com a data de cada dado. | A resposta aparece sem nenhum clique. Cada número está no formato usado no mercado (CDI em % a.a., PTAX com 4 casas, Ibovespa em pontos com a variação do pregão), e o "?" de cada cartão explica o indicador para quem precisa repassar ao cliente. |
+| Quanto rendeu cada indicador no mês, no ano, em 12, 24 e 36 meses? | Tabelas de **rentabilidade nominal e real** no Resumo. | São as janelas de extratos e lâminas de fundos. Deixar os quatro indicadores lado a lado facilita a comparação. |
+| O investimento ganhou da inflação? | Rentabilidade **real**, cartão **"Corrigido pelo IPCA"** na simulação, gráfico **CDI anualizado × IPCA 12 meses** e **spread de juros reais**. | O ganho real é o argumento central para clientes de longo prazo. No gráfico, a distância entre as duas linhas mostra o juro real sem precisar de conta. |
+| O que teria rendido mais no período? | **Comparação em base 100**, **simulação de R$ 1.000.000,00** e **retorno por ano**. | A base 100 põe séries de naturezas diferentes (taxa, índice e cotação) no mesmo ponto de partida. A simulação traduz o percentual em reais, a linguagem do cliente. As barras por ano mostram que o vencedor muda de um ano para outro. |
+| A bolsa compensou o risco? | Aba **Bolsa**: Ibovespa contra o CDI (excesso em p.p. e "% do CDI"), drawdown máximo, distância da máxima em 5 anos e médias móveis de 50 e 200 pregões. | O "% do CDI" é a mesma régua dos produtos de renda fixa. O drawdown e a distância da máxima mostram o tamanho das quedas, o que ajuda a explicar a volatilidade da carteira. |
+| E o dólar? | Aba **Câmbio**: PTAX com médias móveis e faixa de 12 meses, e **Ibovespa em dólar**. | Mostra a tendência do câmbio para quem tem exposição internacional e se a bolsa subiu de fato ou só pela desvalorização do real. |
+| Até quando vão os dados? | Data do último dado em cada cartão e rótulos como "até set/2026" nas métricas com IPCA. | Evita citar ao cliente um número desatualizado ou comparar períodos diferentes. |
+
+Outras escolhas pensadas para esse uso:
+- Um **único filtro de período** vale para todas as abas.
+- **Cores fixas** por indicador.
+- Números no **padrão brasileiro** (1.234,56).
+- Uma **tabela de dados** sob cada gráfico, para copiar valores exatos.
 
 ## Testes
 
