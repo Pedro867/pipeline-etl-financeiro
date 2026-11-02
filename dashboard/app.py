@@ -180,48 +180,48 @@ last_data = gold("ultimo_dado").set_index("serie")
 real_rates = gold("juros_reais").iloc[0]
 ipca_idx = ipca_index(ipca)
 
-# Resumo: sempre visível, não depende do filtro de período.
-st.header("Resumo")
-cols = st.columns(4)
-cols[0].metric("CDI anualizado", fmt_pct(real_rates["cdi_anualizado_pct"], signed=False), border=True,
-               help="Taxa diária do CDI anualizada em 252 dias úteis.")
-cols[0].caption(f"Dado de {fmt_date(real_rates['data_referencia'])}")
-cols[1].metric("IPCA 12 meses", fmt_pct(real_rates["ipca_12m_pct"], signed=False), border=True,
-               help="Inflação acumulada nos 12 últimos meses divulgados pelo IBGE.")
-cols[1].caption(f"Até {fmt_month(real_rates['mes_referencia_ipca'])}")
-last_ptax, last_ibov = ptax.iloc[-1], ibov.iloc[-1]
-cols[2].metric("Dólar PTAX venda", fmt_brl(last_ptax["ptax_venda"], 4), fmt_pct(last_ptax["var_d1_pct"]),
-               delta_color="off", border=True, help="Variação em relação ao dia útil anterior.")
-cols[2].caption(f"Dado de {fmt_date(last_ptax['data'])}")
-cols[3].metric("Ibovespa", f"{fmt_num(last_ibov['fechamento'], 0)} pts", fmt_pct(last_ibov["var_d1_pct"]),
-               border=True, help="Variação em relação ao pregão anterior.")
-cols[3].caption(f"Fechamento de {fmt_date(last_ibov['data'])}")
+# Resumo: não depende do filtro de período. Seção expansível, aberta por padrão.
+with st.expander("**Resumo**", expanded=True):
+    cols = st.columns(4)
+    cols[0].metric("CDI anualizado", fmt_pct(real_rates["cdi_anualizado_pct"], signed=False), border=True,
+                   help="Taxa diária do CDI anualizada em 252 dias úteis.")
+    cols[0].caption(f"Dado de {fmt_date(real_rates['data_referencia'])}")
+    cols[1].metric("IPCA 12 meses", fmt_pct(real_rates["ipca_12m_pct"], signed=False), border=True,
+                   help="Inflação acumulada nos 12 últimos meses divulgados pelo IBGE.")
+    cols[1].caption(f"Até {fmt_month(real_rates['mes_referencia_ipca'])}")
+    last_ptax, last_ibov = ptax.iloc[-1], ibov.iloc[-1]
+    cols[2].metric("Dólar PTAX venda", fmt_brl(last_ptax["ptax_venda"], 4), fmt_pct(last_ptax["var_d1_pct"]),
+                   delta_color="off", border=True, help="Variação em relação ao dia útil anterior.")
+    cols[2].caption(f"Dado de {fmt_date(last_ptax['data'])}")
+    cols[3].metric("Ibovespa", f"{fmt_num(last_ibov['fechamento'], 0)} pts", fmt_pct(last_ibov["var_d1_pct"]),
+                   border=True, help="Variação em relação ao pregão anterior.")
+    cols[3].caption(f"Fechamento de {fmt_date(last_ibov['data'])}")
 
-st.subheader("Rentabilidade nominal")
-nominal = rent[rent["tipo"] == "nominal"]
-table = nominal.pivot(index="serie", columns="janela", values="retorno_pct").reindex(NAMES).reindex(columns=WINDOWS)
-table = table.map(fmt_pct).rename(index=NAMES, columns=WINDOWS)
-until = nominal.groupby("serie")["data_fim"].max().reindex(NAMES)
-table.insert(0, "Até", [fmt_month(d) if s == "ipca" else fmt_date(d) for s, d in until.items()])
-st.dataframe(table.rename_axis("Indicador").reset_index(), hide_index=True)
-st.caption("Mês e ano: desde o último dado do mês ou do ano anterior. O IPCA vai até o último mês divulgado.")
+    st.subheader("Rentabilidade nominal")
+    nominal = rent[rent["tipo"] == "nominal"]
+    table = nominal.pivot(index="serie", columns="janela", values="retorno_pct").reindex(NAMES).reindex(columns=WINDOWS)
+    table = table.map(fmt_pct).rename(index=NAMES, columns=WINDOWS)
+    until = nominal.groupby("serie")["data_fim"].max().reindex(NAMES)
+    table.insert(0, "Até", [fmt_month(d) if s == "ipca" else fmt_date(d) for s, d in until.items()])
+    st.dataframe(table.rename_axis("Indicador").reset_index(), hide_index=True)
+    st.caption("Mês e ano: desde o último dado do mês ou do ano anterior. O IPCA vai até o último mês divulgado.")
 
-st.subheader("Rentabilidade real (descontada a inflação)")
-real = rent[rent["tipo"] == "real"]
-real_table = real.pivot(index="serie", columns="janela", values="retorno_pct").reindex(["cdi", "ibovespa"])
-real_table = real_table.reindex(columns=WINDOWS).map(fmt_pct).rename(index=NAMES, columns=WINDOWS)
-st.dataframe(real_table.rename_axis("Indicador").reset_index(), hide_index=True)
-st.caption(f"Alinhada aos meses do último IPCA divulgado: até {fmt_month(real_rates['mes_referencia_ipca'])}.")
+    st.subheader("Rentabilidade real (descontada a inflação)")
+    real = rent[rent["tipo"] == "real"]
+    real_table = real.pivot(index="serie", columns="janela", values="retorno_pct").reindex(["cdi", "ibovespa"])
+    real_table = real_table.reindex(columns=WINDOWS).map(fmt_pct).rename(index=NAMES, columns=WINDOWS)
+    st.dataframe(real_table.rename_axis("Indicador").reset_index(), hide_index=True)
+    st.caption(f"Alinhada aos meses do último IPCA divulgado: até {fmt_month(real_rates['mes_referencia_ipca'])}.")
 
-st.subheader("Data do último dado")
-units = {"cdi": lambda v: f"{fmt_num(v, 6)}% ao dia", "ipca": lambda v: fmt_pct(v, signed=False) + " no mês",
-         "dolar_ptax": lambda v: fmt_brl(v, 4), "ibovespa": lambda v: f"{fmt_num(v, 0)} pts"}
-st.dataframe(pd.DataFrame([
-    {"Indicador": NAMES[s],
-     "Data": fmt_month(last_data.loc[s, "data_ultimo_dado"]) if s == "ipca" else fmt_date(last_data.loc[s, "data_ultimo_dado"]),
-     "Último valor": units[s](last_data.loc[s, "ultimo_valor"])}
-    for s in NAMES if s in last_data.index
-]), hide_index=True)
+    st.subheader("Data do último dado")
+    units = {"cdi": lambda v: f"{fmt_num(v, 6)}% ao dia", "ipca": lambda v: fmt_pct(v, signed=False) + " no mês",
+             "dolar_ptax": lambda v: fmt_brl(v, 4), "ibovespa": lambda v: f"{fmt_num(v, 0)} pts"}
+    st.dataframe(pd.DataFrame([
+        {"Indicador": NAMES[s],
+         "Data": fmt_month(last_data.loc[s, "data_ultimo_dado"]) if s == "ipca" else fmt_date(last_data.loc[s, "data_ultimo_dado"]),
+         "Último valor": units[s](last_data.loc[s, "ultimo_valor"])}
+        for s in NAMES if s in last_data.index
+    ]), hide_index=True)
 
 
 st.divider()
@@ -400,6 +400,7 @@ with tab_fx:
     fig.update_yaxes(tickformat=",.0f", tickprefix="US$ ")
     show(fig)
     data_view(usd)
+
 
 st.divider()
 st.caption(

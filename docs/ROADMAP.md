@@ -131,6 +131,7 @@ Todas as decisões abaixo dependem de aprovação.
   - ✅ Testes de fumaça em `tests/test_dashboard.py`.
 - ✅ Publicado no Streamlit Community Cloud: https://pipeline-etl-financeiro.streamlit.app/ (público, conferido em 01/11/2026).
 - ✅ Ajustes de 01/11/2026: o Resumo virou a parte fixa do topo, e o filtro passou a valer só para as abas abaixo dele. Na simulação, o IPCA virou "Corrigido pelo IPCA".
+- ✅ Ajuste de 02/11/2026: o Resumo virou seção expansível, aberta por padrão.
 - 🔶 Outros ajustes de conteúdo e layout.
 
 ## Fase 6 — Documentação 🔄

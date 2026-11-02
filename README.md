@@ -85,7 +85,7 @@ O dashboard ([dashboard/app.py](dashboard/app.py)) usa Streamlit e Plotly. Ele l
 
 - **Local:** `streamlit run dashboard/app.py`, a partir da raiz do projeto.
 - **Nuvem:** **[pipeline-etl-financeiro.streamlit.app](https://pipeline-etl-financeiro.streamlit.app/)**, no Streamlit Community Cloud, apontando para `dashboard/app.py`. O app lê a gold versionada no repositório e se atualiza a cada commit do pipeline.
-- **Organização:** o **Resumo** fica no topo, sempre visível (indicadores do dia, rentabilidade nominal e real e data do último dado), e não depende de período. Abaixo dele, o filtro de período (12M, 24M, 36M, no ano, tudo ou personalizado) vale para as abas **Comparação**, **Juros e inflação**, **Bolsa** e **Câmbio**.
+- **Organização:** o **Resumo** fica no topo, numa seção expansível que começa aberta (indicadores do dia, rentabilidade nominal e real e data do último dado), e não depende de período. Abaixo dele, o filtro de período (12M, 24M, 36M, no ano, tudo ou personalizado) vale para as abas **Comparação**, **Juros e inflação**, **Bolsa** e **Câmbio**.
 - **Simulação de R$ 1.000.000,00:** mostra quanto o valor aplicado no início do período vale hoje no Ibovespa, no CDI e no dólar. O IPCA aparece como **"Corrigido pelo IPCA"**: o valor que os R$ 1.000.000,00 precisariam ter hoje só para manter o poder de compra.
 - **Cores:** cada indicador mantém a mesma cor em todos os gráficos (Ibovespa azul, CDI laranja, dólar verde, IPCA amarelo), nos temas claro e escuro. Todo gráfico tem legenda e uma tabela com os dados ("Ver dados").
 

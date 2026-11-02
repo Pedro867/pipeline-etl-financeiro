@@ -26,7 +26,6 @@ def test_dashboard_renders_all_tabs_without_errors(gold_dir):
     assert not at.exception
     assert [t.label for t in at.tabs] == ["Comparação", "Juros e inflação", "Bolsa", "Câmbio"]
     assert at.metric[0].label == "CDI anualizado"
-    assert at.header[0].value == "Resumo"
     assert len(at.get("plotly_chart")) == 7
 
 
@@ -56,11 +55,14 @@ def test_dashboard_without_data_shows_error(tmp_path, monkeypatch):
     assert "Dados não encontrados" in at.error[0].value
 
 
-def test_summary_comes_before_the_period_filter(gold_dir):
+def test_summary_is_an_expander_opened_by_default(gold_dir):
     at = run_app()
 
-    headers = [h.value for h in at.header]
-    assert headers == ["Resumo", "Análise por período"]  # o filtro fica na segunda parte, acima das abas
+    sections = [e for e in at.expander if e.label.startswith("**")]
+    assert [e.label for e in sections] == ["**Resumo**"]
+    assert sections[0].proto.expanded
+    # A análise por período (com o filtro) continua como cabeçalho, depois do Resumo.
+    assert [h.value for h in at.header] == ["Análise por período"]
 
 
 def test_simulation_shows_ipca_as_inflation_correction(gold_dir):
