@@ -31,13 +31,13 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 
 ## Escopo
 
-| Etapa | O que precisa ser feito |
+| Etapa | O que faz |
 |---|---|
-| **Extração (E)** | Coletar as quatro séries dos últimos 5 anos: as do Banco Central via API SGS e o Ibovespa via `yfinance`. |
-| **Transformação (T)** | Padronizar datas e tipos, tratar dias sem dado (fins de semana, feriados, faltantes) e calcular as métricas que o dashboard usar (por exemplo, retorno acumulado, variação em 12 meses, base 100). |
-| **Carga (L)** | Salvar os dados tratados em uma base organizada (SQLite, parquet ou CSVs estruturados). |
-| **Dashboard** | Montar a visualização final com gráficos, indicadores e comparações escolhidos para atender a equipe comercial. |
-| **Bônus** | Atualização incremental: baixar apenas os dados novos a cada execução. |
+| **Extração (E)** | Coleta as quatro séries dos últimos 5 anos: as do Banco Central via API SGS e o Ibovespa via `yfinance`. Salva o retorno das fontes em JSON (camada bronze, `data/raw`). |
+| **Transformação (T)** | Padroniza datas e tipos, trata os dias sem dado (fins de semana, feriados, faltantes) e calcula as métricas usadas no dashboard, como retorno acumulado, variação em 12 meses e retorno real (camadas silver e gold). |
+| **Carga (L)** | Grava as tabelas tratadas em parquet (`data/processed/silver` e `data/processed/gold`). |
+| **Dashboard** | Mostra indicadores, comparações e gráficos para a equipe comercial (Streamlit). |
+| **Atualização incremental** | Depois da primeira carga, baixa apenas os dados novos a cada execução. |
 
 ## Tecnologias
 
@@ -84,7 +84,7 @@ O pipeline roda no **GitHub Actions** ([.github/workflows/pipeline.yml](.github/
 O dashboard ([dashboard/app.py](dashboard/app.py)) usa Streamlit e Plotly. Ele lê as tabelas da gold e calcula só o que depende do período escolhido: a comparação em base 100, a simulação de R$ 1.000.000,00 e o drawdown máximo. O público e a justificativa das visualizações ainda serão definidos.
 
 - **Local:** `streamlit run dashboard/app.py`, a partir da raiz do projeto.
-- **Nuvem:** Streamlit Community Cloud, apontando para `dashboard/app.py`. O app lê a gold versionada no repositório e se atualiza a cada commit do pipeline.
+- **Nuvem:** **[pipeline-etl-financeiro.streamlit.app](https://pipeline-etl-financeiro.streamlit.app/)**, no Streamlit Community Cloud, apontando para `dashboard/app.py`. O app lê a gold versionada no repositório e se atualiza a cada commit do pipeline.
 - **Organização:** o **Resumo** fica no topo, sempre visível (indicadores do dia, rentabilidade nominal e real e data do último dado), e não depende de período. Abaixo dele, o filtro de período (12M, 24M, 36M, no ano, tudo ou personalizado) vale para as abas **Comparação**, **Juros e inflação**, **Bolsa** e **Câmbio**.
 - **Simulação de R$ 1.000.000,00:** mostra quanto o valor aplicado no início do período vale hoje no Ibovespa, no CDI e no dólar. O IPCA aparece como **"Corrigido pelo IPCA"**: o valor que os R$ 1.000.000,00 precisariam ter hoje só para manter o poder de compra.
 - **Cores:** cada indicador mantém a mesma cor em todos os gráficos (Ibovespa azul, CDI laranja, dólar verde, IPCA amarelo), nos temas claro e escuro. Todo gráfico tem legenda e uma tabela com os dados ("Ver dados").
@@ -123,7 +123,7 @@ pipeline-etl-financeiro/
 │       ├── silver/     # séries limpas e tipadas (parquet)
 │       └── gold/       # métricas (parquet)
 ├── docs/
-│   ├── CONTEXT.md      # contexto do case e registro de decisões
+│   ├── CONTEXT.md      # contexto, requisitos e registro de decisões
 │   └── ROADMAP.md      # fases e andamento
 ├── dashboard/
 │   └── app.py          # dashboard (Streamlit): só lê a gold
@@ -153,5 +153,5 @@ pipeline-etl-financeiro/
 
 ## Documentação
 
-- [docs/CONTEXT.md](docs/CONTEXT.md): contexto do case, especificação e registro de decisões.
+- [docs/CONTEXT.md](docs/CONTEXT.md): contexto, requisitos, métricas, esquema das tabelas e registro de decisões.
 - [docs/ROADMAP.md](docs/ROADMAP.md): fases e andamento do projeto.

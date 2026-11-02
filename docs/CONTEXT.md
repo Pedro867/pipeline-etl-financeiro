@@ -10,18 +10,18 @@
 
 ---
 
-## 1. O desafio
+## 1. Objetivo
 
-A equipe de **Inteligência Comercial** acompanha diariamente indicadores de mercado (juros, inflação, câmbio e bolsa) para embasar conversas com clientes. Hoje esse acompanhamento é **manual**.
+A equipe de **Inteligência Comercial** acompanha diariamente indicadores de mercado (juros, inflação, câmbio e bolsa) para embasar conversas com clientes. Sem automação, esse acompanhamento é **manual**.
 
-Objetivo: construir um **pipeline de dados (ETL)** que:
+O projeto é um **pipeline de dados (ETL)** que:
 
 1. Extrai as séries de fontes públicas;
 2. Trata os dados;
 3. Organiza-os em uma base;
 4. Alimenta um **dashboard** que apresente essas informações.
 
-O **produto final é o dashboard**. As decisões sobre ele (quais gráficos, quais comparações, como exibir cada informação e em qual ferramenta) são nossas. Não existe uma única resposta certa — existe uma **escolha bem justificada**.
+O **produto final é o dashboard**. Cada escolha sobre ele (gráficos, comparações, forma de exibir cada informação e ferramenta) é registrada com sua justificativa.
 
 ---
 
@@ -136,39 +136,38 @@ Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um d
 
 ---
 
-## 3. Especificação do pipeline
+## 3. Requisitos do pipeline
 
 ### Extração (E)
 - Coletar as quatro séries cobrindo os **últimos 5 anos**.
-- Séries do Banco Central: via API SGS (códigos a pesquisar).
+- Séries do Banco Central: via API SGS (códigos na seção 2).
 - Ibovespa: via biblioteca `yfinance`.
 
 ### Transformação (T)
 - Padronizar **datas e tipos**.
 - Tratar **dias sem dado** (fins de semana, feriados, faltantes).
-- Calcular o que for necessário para o dashboard — exemplos citados no case: retornos acumulados, variação em 12 meses, comparações em base 100.
+- Calcular as métricas usadas no dashboard (seção 5), como retornos acumulados, variação em 12 meses e comparações em base 100.
 - **Documentar cada decisão no README.**
 
 ### Carga (L)
-- Salvar os dados tratados em uma base organizada — opções citadas: **SQLite, parquet ou CSVs estruturados** — que alimente o dashboard.
+- Salvar os dados tratados em uma base organizada, que alimente o dashboard (formato escolhido: parquet).
 
 ### Dashboard
-- Ferramenta livre — opções citadas: Streamlit, Power BI, Excel, página HTML.
-- Escolher gráficos e indicadores e como organizá-los.
+- Escolher a ferramenta (escolhida: Streamlit), os gráficos e indicadores e como organizá-los.
 - **Explicar no README**: para quem é o dashboard e por que as visualizações respondem bem às necessidades de quem o usa.
 
-### Bônus (opcional)
-- Suportar **atualização incremental**: baixar apenas os dados novos a cada execução.
+### Atualização incremental
+- Baixar apenas os dados novos a cada execução.
 
 ---
 
-## 4. Entregáveis esperados
+## 4. Entregas
 
-- [ ] Pipeline ETL funcional (extração, transformação, carga).
-- [ ] Base de dados tratada e organizada.
-- [ ] Dashboard.
+- [x] Pipeline ETL funcional (extração, transformação, carga).
+- [x] Base de dados tratada e organizada (bronze, silver e gold).
+- [x] Dashboard.
 - [ ] README documentando as decisões de transformação, o público do dashboard e a justificativa das visualizações.
-- [ ] (Bônus) Atualização incremental.
+- [x] Atualização incremental.
 
 ---
 
@@ -294,14 +293,14 @@ As métricas 1.6 (base 100), 2.7 (simulação de R$ 1.000.000,00) e 3.3 (drawdow
 | 2026-10-27 | Versão do Python: **3.12.3**. | Versão do ambiente de desenvolvimento. | ✅ |
 | 2026-10-27 | Agendamento via **crontab**. | Escolha do responsável pelo projeto. | ✅ |
 | 2026-10-27 | Códigos SGS: CDI = `12`, IPCA = `433`, Dólar PTAX venda = `1`. | Pesquisados no SGS e confirmados com uma consulta à API. | ✅ |
-| 2026-10-27 | Período de extração: da data atual menos 5 anos até a data atual. Se o dia atual for 29/02, a data inicial é 28/02. | O case pede os últimos 5 anos. | ✅ |
-| 2026-10-27 | Adicionar **yfinance** às dependências. | O case pede essa biblioteca para o Ibovespa. | ✅ |
+| 2026-10-27 | Período de extração: da data atual menos 5 anos até a data atual. Se o dia atual for 29/02, a data inicial é 28/02. | Histórico de 5 anos definido nos requisitos (seção 3). | ✅ |
+| 2026-10-27 | Adicionar **yfinance** às dependências. | Fonte definida para o Ibovespa nos requisitos (seção 3). | ✅ |
 | 2026-10-27 | O crontab só será configurado quando todo o ETL estiver pronto. | Escolha do responsável pelo projeto. | ✅ |
 | 2026-10-28 | Extração com uma função por fonte: `fetch_sgs` (genérica, recebe o código SGS) e `fetch_yfinance`. | Nomes padronizados. As três séries do BCB usam a mesma API. | ✅ |
 | 2026-10-28 | A função que salva os arquivos fica em `src/utils.py` (arquivo novo na estrutura). | Separa a gravação da busca, o que permite testar a busca sem gravar arquivo. | ✅ |
 | 2026-10-28 | A conversão do retorno do `fetch_yfinance` (DataFrame) para JSON fica em `src/utils.py`. O `fetch_yfinance` chama essa conversão e já retorna JSON. | Funções auxiliares ficam concentradas em `utils.py`, e as duas buscas (`fetch_sgs` e `fetch_yfinance`) retornam o mesmo tipo, então os pontos de entrada tratam todas as séries do mesmo jeito. | ✅ |
 | 2026-10-28 | Camada bronze (`data/raw`): um arquivo por execução, com uma subpasta por série: `data/raw/<serie>/<serie>_YYYYMMDD.json`, onde `YYYYMMDD` é a **data da ingestão**. | Arquivos imutáveis, só acrescentados, guardam o histórico do que foi baixado e permitem a carga incremental. | ✅ |
-| 2026-10-28 | Carga completa (5 anos) na primeira execução e incremental nas seguintes. | Atende o bônus de atualização incremental. | ✅ |
+| 2026-10-28 | Carga completa (5 anos) na primeira execução e incremental nas seguintes. | Atende o requisito de atualização incremental. | ✅ |
 | 2026-10-28 | O JSON é salvo como a fonte retorna, sem metadados. O retorno do yfinance (DataFrame) é convertido para JSON. | Todas as séries chegam à camada silver no mesmo formato. | ✅ |
 | 2026-10-28 | As séries diárias (CDI, PTAX, Ibovespa) rodam em um fluxo, uma vez por dia. O IPCA (mensal) roda em um fluxo separado. | As frequências de publicação são diferentes. | ✅ |
 | 2026-10-28 | Data inicial da carga incremental: o dia seguinte ao último arquivo salvo da série (até a data atual). | Em um dia normal é só o dia atual, e se uma execução falhar os dias perdidos entram automaticamente na seguinte. | ✅ |
@@ -359,6 +358,7 @@ As métricas 1.6 (base 100), 2.7 (simulação de R$ 1.000.000,00) e 3.3 (drawdow
 | 2026-11-01 | Dependências do dashboard: `streamlit==1.66.1` e `plotly==7.1.0`. | O Streamlit Community Cloud instala o `requirements.txt` da raiz. | ✅ |
 | 2026-11-01 | Dashboard: o **Resumo deixa de ser aba** e vira a primeira parte da página, sempre visível. O filtro de período fica abaixo dele e vale só para as abas Comparação, Juros e inflação, Bolsa e Câmbio. | O Resumo não depende de período; com o filtro acima dele, parecia que o filtro fazia algo ali. | ✅ |
 | 2026-11-01 | Simulação de R$ 1.000.000,00: o IPCA deixa de aparecer como investimento e vira **"Corrigido pelo IPCA"**, ou seja, R$ 1.000.000,00 × (1 + IPCA do período): o valor que o montante inicial precisaria ter hoje só para manter o poder de compra. | Comparar R$ 1.000.000,00 "investidos no IPCA" não faz sentido. O valor corrigido serve de régua para os outros três cartões. | ✅ |
+| 2026-11-01 | Dashboard publicado no Streamlit Community Cloud: **https://pipeline-etl-financeiro.streamlit.app/**, com acesso público. | Acesso pela equipe por um link, sem precisar rodar nada localmente. | ✅ |
 | 2026-10-28 | A saída do terminal das execuções do cron é descartada (`> /dev/null 2>&1`). | Os erros de extração já ficam em `log/`. | ✅ |
 | 2026-10-28 | `requirements.txt` gerado de novo com as dependências **importadas diretamente** pelo código e pelos testes, todas com versão fixa: `pyspark`, `requests`, `pytest`, `yfinance`, `pandas` e `curl_cffi`. | `pandas` e `curl_cffi` vinham só como dependências do yfinance, mas passaram a ser importados direto pelo código: `pandas` na conversão para JSON e `curl_cffi` na detecção dos erros de rede do yfinance. | ✅ |
 | 2026-10-28 | Os itens pendentes da Fase 0 (estudo dos indicadores, unidades e limites das fontes, calendários) ficam para depois que a camada silver estiver pronta. | Escolha do responsável pelo projeto. | ✅ |

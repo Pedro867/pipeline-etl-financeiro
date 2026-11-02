@@ -125,7 +125,7 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Primeira versão implementada (01/11/2026): filtro de período no topo e abas Resumo, Comparação, Juros e inflação, Bolsa e Câmbio. Usa todas as métricas aprovadas, inclusive as calculadas no dashboard (base 100, simulação de R$ 1.000.000,00 e drawdown máximo).
   - ✅ Conferida visualmente nos temas claro e escuro (capturas de tela de todas as abas).
   - ✅ Testes de fumaça em `tests/test_dashboard.py`.
-- ⬜ Publicar no Streamlit Community Cloud (feito pelo responsável, no site do Streamlit).
+- ✅ Publicado no Streamlit Community Cloud: https://pipeline-etl-financeiro.streamlit.app/ (público, conferido em 01/11/2026).
 - ✅ Ajustes de 01/11/2026: o Resumo virou a parte fixa do topo, e o filtro passou a valer só para as abas abaixo dele. Na simulação, o IPCA virou "Corrigido pelo IPCA".
 - 🔶 Outros ajustes de conteúdo e layout.
 
@@ -136,7 +136,7 @@ Todas as decisões abaixo dependem de aprovação.
   - ⬜ Decisões de transformação e suas justificativas.
   - ⬜ Para quem é o dashboard e por que as visualizações atendem esse público.
 
-## Fase 7 — Bônus: atualização incremental ⬜
+## Fase 7 — Atualização incremental ⬜
 
 - 🔶 Estratégia para baixar apenas dados novos a cada execução.
 - ⬜ Implementação e validação.
