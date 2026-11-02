@@ -44,6 +44,7 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 - **requests** para as chamadas à API SGS do Banco Central.
 - **yfinance** para a cotação do Ibovespa.
 - **pyarrow** para gravar e ler os arquivos parquet.
+- **Streamlit** e **Plotly** para o dashboard.
 - **pytest** para os testes.
 - Dados armazenados em **parquet**.
 - Agendamento via **GitHub Actions**.
@@ -56,6 +57,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python -m src.main_daily     # séries diárias (CDI, PTAX, Ibovespa), a partir da raiz do projeto
 python -m src.main_monthly   # série mensal (IPCA), a partir da raiz do projeto
+streamlit run dashboard/app.py   # dashboard local, em http://localhost:8501
 ```
 
 Cada fluxo faz a extração (bronze) e, em seguida, recalcula a camada silver (`data/processed/silver/`) e a gold (`data/processed/gold/`).
@@ -75,6 +77,16 @@ O pipeline roda no **GitHub Actions** ([.github/workflows/pipeline.yml](.github/
 - **Falhas:** se alguma série falhar na extração, ou se a transformação falhar, a execução termina **marcada como falha** e o GitHub avisa por e-mail. Mesmo assim, os dados das séries que deram certo e o log do erro são versionados.
 - **Uma execução por vez:** duas execuções nunca rodam ao mesmo tempo, para os commits de dados não se chocarem.
 - **Logs:** o log completo de cada execução fica na aba Actions. Os erros de extração também ficam versionados em `log/<fluxo>_YYYYMMDD_HHMMSS.log`.
+
+## Dashboard
+
+O dashboard ([dashboard/app.py](dashboard/app.py)) usa Streamlit e Plotly. Ele lê as tabelas da gold e calcula só o que depende do período escolhido: a comparação em base 100, a simulação de R$ 1.000.000,00 e o drawdown máximo. O público e a justificativa das visualizações ainda serão definidos.
+
+- **Local:** `streamlit run dashboard/app.py`, a partir da raiz do projeto.
+- **Nuvem:** Streamlit Community Cloud, apontando para `dashboard/app.py`. O app lê a gold versionada no repositório e se atualiza a cada commit do pipeline.
+- **Organização:** o **Resumo** fica no topo, sempre visível (indicadores do dia, rentabilidade nominal e real e data do último dado), e não depende de período. Abaixo dele, o filtro de período (12M, 24M, 36M, no ano, tudo ou personalizado) vale para as abas **Comparação**, **Juros e inflação**, **Bolsa** e **Câmbio**.
+- **Simulação de R$ 1.000.000,00:** mostra quanto o valor aplicado no início do período vale hoje no Ibovespa, no CDI e no dólar. O IPCA aparece como **"Corrigido pelo IPCA"**: o valor que os R$ 1.000.000,00 precisariam ter hoje só para manter o poder de compra.
+- **Cores:** cada indicador mantém a mesma cor em todos os gráficos (Ibovespa azul, CDI laranja, dólar verde, IPCA amarelo), nos temas claro e escuro. Todo gráfico tem legenda e uma tabela com os dados ("Ver dados").
 
 ## Testes
 
@@ -98,6 +110,7 @@ Os testes ficam em `tests/` e **não acessam a internet**: as respostas do SGS e
 - **`tests/test_transform.py`:** silver: esquema e tipos do parquet, conversão de cada série, índices acumulados, união da bronze com deduplicação pela ingestão mais recente, ordenação, sem preenchimento de dias, descarte de valores inválidos e série ausente.
 - **`tests/test_gold.py`:** gold, com séries sintéticas: início das janelas e "último dado anterior", retornos nominais e reais (alinhados ao IPCA, pela fórmula de Fisher), excesso e % do CDI, médias móveis por linha, mínima/máxima com janela completa, distância da máxima em 5 anos, Ibovespa em dólar só nas datas em comum, retorno anual, IPCA 12M e anualizado, juros reais, tipos do parquet, séries ausentes e falhas registradas no log.
 - **`tests/test_main.py`:** séries e códigos configurados em cada ponto de entrada.
+- **`tests/test_dashboard.py`:** roda o dashboard sobre uma gold sintética (todas as abas e todos os períodos do filtro), confere o formato brasileiro dos números e a mensagem quando não há dados.
 
 ## Estrutura do projeto
 
@@ -111,6 +124,8 @@ pipeline-etl-financeiro/
 ├── docs/
 │   ├── CONTEXT.md      # contexto do case e registro de decisões
 │   └── ROADMAP.md      # fases e andamento
+├── dashboard/
+│   └── app.py          # dashboard (Streamlit): só lê a gold
 ├── src/
 │   ├── __init__.py
 │   ├── extract.py      # extração (E)
@@ -125,7 +140,8 @@ pipeline-etl-financeiro/
 │   ├── test_extract.py
 │   ├── test_transform.py
 │   ├── test_gold.py
-│   └── test_main.py
+│   ├── test_main.py
+│   └── test_dashboard.py
 ├── log/                # logs de erro (versionados, criados pelo pipeline)
 ├── .github/workflows/
 │   └── pipeline.yml    # agendamento no GitHub Actions

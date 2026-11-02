@@ -38,7 +38,7 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Linguagem e dependências: Python com pandas (transformação), pyarrow (parquet), requests, yfinance, curl_cffi e pytest (`requirements.txt` + `.venv`). O PySpark foi substituído pelo pandas em 29/10/2026.
 - ✅ Formato da base de carga: parquet.
 - 🔶 Modelagem dos dados (granularidade, tabelas/arquivos brutos vs. tratados).
-- 🔶 Ferramenta do dashboard (Streamlit, Power BI, Excel, HTML ou outra).
+- ✅ Ferramenta do dashboard: **Streamlit** (decisão de 01/11/2026).
 - ✅ Forma de execução do pipeline, a partir da raiz do projeto: `python -m src.main_daily` (séries diárias) e `python -m src.main_monthly` (IPCA).
 - ✅ Agendamento: **GitHub Actions** (`.github/workflows/pipeline.yml`), substituindo o crontab em 01/11/2026.
   - ✅ Fluxo diário todos os dias às 09:17 de Brasília (`17 12 * * *` UTC). Fluxo mensal nos dias 8 a 20, às 10:17 (`17 13 8-20 * *` UTC).
@@ -80,7 +80,7 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Confirmado em 29/10/2026: a linha do Ibovespa de D-1 chega consolidada no dia seguinte (28/10 com `Volume` 21.515.700).
 - ✅ IPCA: como o SGS devolve o mês que **contém** a data inicial, na série mensal a busca começa no 1º dia do mês seguinte ao último dado.
 - ✅ Ibovespa: a busca vai só **até ontem**, porque a linha do dia atual vem provisória mesmo depois do fechamento.
-- ✅ Testes automatizados com pytest em `tests/` (191 testes, sem acesso à internet): `pytest` a partir da raiz.
+- ✅ Testes automatizados com pytest em `tests/` (201 testes, sem acesso à internet): `pytest` a partir da raiz.
 - ✅ Horário de execução: fluxo diário todos os dias às 09:00, com todas as séries em D-1. IPCA nos dias 8 a 20, às 10:00. A saída do terminal é descartada.
 
 ## Fase 3 — Transformação (T) ✅
@@ -118,13 +118,16 @@ Todas as decisões abaixo dependem de aprovação.
 - ⬜ Salvar os dados tratados no formato aprovado na Fase 1.
 - ⬜ Garantir que a base alimenta o dashboard.
 
-## Fase 5 — Dashboard ⬜
+## Fase 5 — Dashboard 🔄
 
-- 🔶 Público-alvo e perguntas que o dashboard deve responder.
-- 🔶 Quais gráficos e indicadores exibir.
-- 🔶 Quais comparações fazem sentido entre as séries.
-- 🔶 Organização/layout e filtros.
-- ⬜ Implementar o dashboard na ferramenta aprovada.
+- 🔶 Público-alvo e perguntas que o dashboard deve responder (adiado em 01/11/2026).
+- ✅ Ferramenta: Streamlit, com gráficos em Plotly, em `dashboard/app.py`.
+- ✅ Primeira versão implementada (01/11/2026): filtro de período no topo e abas Resumo, Comparação, Juros e inflação, Bolsa e Câmbio. Usa todas as métricas aprovadas, inclusive as calculadas no dashboard (base 100, simulação de R$ 1.000.000,00 e drawdown máximo).
+  - ✅ Conferida visualmente nos temas claro e escuro (capturas de tela de todas as abas).
+  - ✅ Testes de fumaça em `tests/test_dashboard.py`.
+- ⬜ Publicar no Streamlit Community Cloud (feito pelo responsável, no site do Streamlit).
+- ✅ Ajustes de 01/11/2026: o Resumo virou a parte fixa do topo, e o filtro passou a valer só para as abas abaixo dele. Na simulação, o IPCA virou "Corrigido pelo IPCA".
+- 🔶 Outros ajustes de conteúdo e layout.
 
 ## Fase 6 — Documentação ⬜
 
