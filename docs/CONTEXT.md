@@ -148,7 +148,7 @@ Observação: o par `BRL=X` do Yahoo mostra o salto do dólar só em 27/10, um d
 - Padronizar **datas e tipos**.
 - Tratar **dias sem dado** (fins de semana, feriados, faltantes).
 - Calcular as métricas usadas no dashboard (seção 5), como retornos acumulados, variação em 12 meses e comparações em base 100.
-- **Documentar cada decisão no README.**
+- **Documentar no README as principais decisões** (as que mudam um número exibido ou a forma de lê-lo). As demais ficam no [Registro de decisões](#registro-de-decisões).
 
 ### Carga (L)
 - Salvar os dados tratados em uma base organizada, que alimente o dashboard (formato escolhido: parquet).
@@ -363,6 +363,7 @@ As métricas 1.6 (base 100), 2.7 (simulação de R$ 1.000.000,00) e 3.3 (drawdow
 | 2026-11-02 | Dashboard: o **Resumo** vira uma seção expansível (`st.expander`), aberta por padrão. A **Análise por período** continua como cabeçalho (revisto no mesmo dia: chegou a ser expansível também). | Quem quiser pode recolher o Resumo e ir direto à análise por período. | ✅ |
 | 2026-11-02 | `fetch_yfinance` descarta linhas com data fora do período pedido. O arquivo `data/raw/ibovespa/ibovespa_20261101.json`, que só tinha a linha provisória de 30/10 fora do período, foi removido da bronze (continua no histórico do Git). | Pedindo um fim de semana, o Yahoo devolveu o pregão anterior provisório, que substituiu na silver o valor consolidado já salvo. | ✅ |
 | 2026-11-02 | Fechamento do Ibovespa de 29/12/2022 no Yahoo (prévia, e não o oficial): **manter e documentar**, sem tabela de correções manuais. | O erro (0,27% naquele dia) afeta só o retorno anual de 2022 e 2023. Uma correção manual exigiria manutenção. | ✅ |
+| 2026-11-02 | O README documenta só as **principais decisões de tratamento** (seção "Tratamento dos dados"), as que mudam um número exibido no dashboard ou a forma de lê-lo, com um link para este registro. | Há dezenas de decisões; listar todas no README o deixaria longo demais para quem só quer entender os números. | ✅ |
 | 2026-10-28 | A saída do terminal das execuções do cron é descartada (`> /dev/null 2>&1`). | Os erros de extração já ficam em `log/`. | ✅ |
 | 2026-10-28 | `requirements.txt` gerado de novo com as dependências **importadas diretamente** pelo código e pelos testes, todas com versão fixa: `pyspark`, `requests`, `pytest`, `yfinance`, `pandas` e `curl_cffi`. | `pandas` e `curl_cffi` vinham só como dependências do yfinance, mas passaram a ser importados direto pelo código: `pandas` na conversão para JSON e `curl_cffi` na detecção dos erros de rede do yfinance. | ✅ |
 | 2026-10-28 | Os itens pendentes da Fase 0 (estudo dos indicadores, unidades e limites das fontes, calendários) ficam para depois que a camada silver estiver pronta. | Escolha do responsável pelo projeto. | ✅ |

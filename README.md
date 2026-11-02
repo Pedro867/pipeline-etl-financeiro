@@ -27,7 +27,7 @@ Este projeto automatiza o processo:
 
 O período de coleta é dos **últimos 5 anos**.
 
-As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cotação) diferentes, além de calendários distintos (dias úteis do BCB e pregões da B3). Ainda falta decidir como conciliar essas diferenças.
+As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cotação) diferentes, além de calendários distintos (dias úteis do BCB e pregões da B3). A forma de conciliar essas diferenças está em [Tratamento dos dados](#tratamento-dos-dados).
 
 ## Escopo
 
@@ -38,6 +38,25 @@ As séries têm frequências (diária e mensal) e naturezas (taxa, índice e cot
 | **Carga (L)** | Grava as tabelas tratadas em parquet (`data/processed/silver` e `data/processed/gold`). |
 | **Dashboard** | Mostra indicadores, comparações e gráficos para a equipe comercial (Streamlit). |
 | **Atualização incremental** | Depois da primeira carga, baixa apenas os dados novos a cada execução. |
+
+## Tratamento dos dados
+
+Principais decisões de tratamento, ou seja, as que mudam um número exibido no dashboard ou a forma de lê-lo.
+
+| Decisão | Por quê |
+|---|---|
+| Cada série fica no **próprio calendário**, sem preencher fins de semana e feriados. O Ibovespa em dólar usa só as datas em comum entre Ibovespa e PTAX. | Nenhum valor é inventado, e as métricas de uma série só (variação diária, médias móveis, mínima e máxima) ficam corretas. |
+| O início de cada janela (mês, ano, 12M, 24M, 36M) usa o **último dado anterior** à data de referência. Ex.: o YTD parte do último fechamento de dezembro. | É a convenção do mercado ("fechamento do ano anterior"), e nenhum dia de retorno fica de fora da janela. |
+| O CDI e o IPCA viram **índice acumulado**, que inclui a taxa do próprio período. | Todo retorno passa a ser calculado do mesmo jeito: valor final ÷ valor inicial − 1. |
+| O **retorno real** usa a fórmula de Fisher, (1 + nominal) ÷ (1 + IPCA) − 1. O CDI e o Ibovespa são cortados nos meses fechados do último IPCA divulgado (ex.: "12M até set/2026"). | A subtração simples distorce o resultado. Comparar o CDI até ontem com o IPCA até o mês anterior misturaria um mês de rendimento sem a inflação correspondente. |
+| O **"% do CDI"** só aparece quando os dois retornos são positivos. Nos outros casos, vale o excesso de retorno em pontos percentuais. | Com retornos negativos, a divisão perde o sentido. Ex.: −10% ÷ −5% daria "200% do CDI". |
+| O **CDI anualizado** usa 252 dias úteis. O spread de juros reais é o CDI anualizado de hoje contra o IPCA dos últimos 12 meses. | 252 é a convenção do mercado brasileiro. O spread é uma "foto" do juro real observado (ex-post), e não uma expectativa. |
+| A silver e a gold são **recalculadas inteiras** a cada execução, a partir de toda a bronze. Se a mesma data aparecer mais de uma vez, fica a ingestão mais recente. | O volume é pequeno, e o resultado é sempre consistente com a bronze. |
+| O **Ibovespa** é buscado só até o dia anterior, e linhas fora do período pedido são descartadas. | A linha do pregão do dia, e às vezes a de um pregão anterior devolvido fora do período, vem provisória. |
+
+**Limitação conhecida:** no Yahoo Finance, o fechamento do Ibovespa de 29/12/2022 é 110.030,91 pontos, e o divulgado pela B3 é 109.734,60. O dado do Yahoo foi mantido, sem correção manual. A diferença afeta só o retorno anual do Ibovespa em 2022 (4,97%, contra ≈ 4,69% oficial) e em 2023 (21,95%, contra ≈ 22,28%).
+
+Todas as decisões, com data e justificativa, estão no [registro de decisões](docs/CONTEXT.md#registro-de-decisões). O esquema das tabelas e as regras de cálculo estão nas seções 5 e 6 do [CONTEXT.md](docs/CONTEXT.md).
 
 ## Tecnologias
 

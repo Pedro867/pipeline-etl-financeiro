@@ -114,7 +114,6 @@ Todas as decisões abaixo dependem de aprovação.
   - ✅ Percentuais em %, com sufixo `_pct`.
   - ✅ Ibovespa na silver só com `data` e `fechamento`.
   - ✅ Esquema final das tabelas: ver [CONTEXT.md, seção 6](CONTEXT.md#6-esquema-das-tabelas-tratadas-parquet).
-- ⬜ Documentar cada decisão no README.
 
 ## Fase 4 — Carga (L) ✅
 
@@ -136,9 +135,9 @@ Todas as decisões abaixo dependem de aprovação.
 
 ## Fase 6 — Documentação 🔄
 
-- ⬜ README com:
+- 🔄 README com:
   - ✅ Como executar o pipeline e o dashboard (seções "Como executar", "Agendamento" e "Dashboard").
-  - ⬜ Decisões de transformação e suas justificativas.
+  - ✅ Principais decisões de tratamento e suas justificativas (seção "Tratamento dos dados"). As demais ficam no registro de decisões do CONTEXT.
   - ⬜ Para quem é o dashboard e por que as visualizações atendem esse público.
 
 ## Fase 7 — Atualização incremental ✅
