@@ -83,15 +83,15 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Confirmado em 29/10/2026: a linha do Ibovespa de D-1 chega consolidada no dia seguinte (28/10 com `Volume` 21.515.700).
 - ✅ IPCA: como o SGS devolve o mês que **contém** a data inicial, na série mensal a busca começa no 1º dia do mês seguinte ao último dado.
 - ✅ Ibovespa: a busca vai só **até ontem**, porque a linha do dia atual vem provisória mesmo depois do fechamento.
-- ✅ Testes automatizados com pytest em `tests/` (201 testes, sem acesso à internet): `pytest` a partir da raiz.
+- ✅ Testes automatizados com pytest em `tests/` (204 testes, sem acesso à internet): `pytest` a partir da raiz.
 - ✅ Horário de execução: fluxo diário todos os dias às 09:17 de Brasília, com todas as séries em D-1; IPCA nos dias 8 a 20, às 10:17 (GitHub Actions; ver Fase 1).
-- 🔶 Ibovespa salvo ainda provisório: em 01/11/2026 a linha de 30/10 (sexta) foi salva com `Volume = 0`, porque o Yahoo ainda não tinha consolidado o dado. Opções em aberto: janela de sobreposição na carga incremental, descartar linhas com `Volume = 0` ou manter como está.
+- ✅ Ibovespa provisório fora do período (corrigido em 02/11/2026): a execução de 01/11 pediu a partir de sábado (31/10), e o Yahoo devolveu a linha provisória de sexta (30/10), fora do período pedido. Ela substituiu na silver o valor consolidado salvo em 31/10. O `fetch_yfinance` passou a descartar linhas fora do período pedido.
 
 ## Fase 3 — Transformação (T) ✅
 
 - ✅ Silver implementada em `src/transform.py` (`build_silver`): datas e tipos padronizados, deduplicação pela ingestão mais recente e índices acumulados. Validada com a bronze real em 29/10/2026.
 - ✅ Gold implementada em `src/transform.py` (`build_gold`): 9 tabelas. Validada com os dados reais em 29/10/2026; os números conferem com o histórico conhecido do CDI, do IPCA e do dólar.
-  - ⬜ Avaliar a diferença do fechamento do Ibovespa de 29/12/2022 no Yahoo em relação ao oficial (ver CONTEXT.md, seção 6).
+  - ✅ Avaliar a diferença do fechamento do Ibovespa de 29/12/2022 no Yahoo em relação ao oficial: confirmado que o Yahoo guardou a prévia do fim da tarde (110.031) em vez do fechamento oficial (109.734,60). Decisão: manter e documentar (ver CONTEXT.md, seção 6).
 - ✅ Transformação chamada no fim de `main_daily` e `main_monthly` (`run_transformation`). Uma falha vai para o log da execução sem afetar a bronze. Roda a silver e depois a gold; se a silver falhar, a gold não roda.
 - ✅ Testes da transformação: silver em `tests/test_transform.py` (30 testes) e gold em `tests/test_gold.py` (43 testes).
 - ✅ Tratamento de dias sem dado (fins de semana, feriados, faltantes): é feito na camada silver, e cada série fica só com os dias em que tem dado, sem preenchimento.

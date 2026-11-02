@@ -85,6 +85,9 @@ def fetch_yfinance(ticker: str, start: date, end: date) -> list[dict]:
 
     Só traz pregões até o dia anterior a `end`: a linha do dia corrente vem
     provisória (ex.: `Volume = 0`) mesmo depois do fechamento.
+
+    Linhas fora do período pedido são descartadas: num período sem pregão (ex.: fim de
+    semana), o Yahoo pode devolver o último pregão anterior, com valores provisórios.
     """
     if start >= end:
         return []
@@ -99,7 +102,8 @@ def fetch_yfinance(ticker: str, start: date, end: date) -> list[dict]:
             )
         except YFPricesMissingError:
             return []
-        return dataframe_to_json(df)
+        # Datas em AAAA-MM-DD: a comparação de texto respeita a ordem cronológica.
+        return [r for r in dataframe_to_json(df) if start.isoformat() <= r["Date"] < end.isoformat()]
 
     return _with_retry(request, ticker)
 

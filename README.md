@@ -105,7 +105,7 @@ Os testes ficam em `tests/` e **não acessam a internet**: as respostas do SGS e
   - criação do log só quando há erro.
 - **`tests/test_extract.py`:**
   - `fetch_sgs`: sucesso, "sem dado" (HTTP 404 ou 200), período de um dia só, erros 4xx, página HTML com status 200, JSON inválido, erros 5xx/429 e de rede com retentativa;
-  - `fetch_yfinance`: período sem pregão, ticker inválido, limite de requisições, erros de rede e busca só até o dia anterior;
+  - `fetch_yfinance`: período sem pregão, ticker inválido, limite de requisições, erros de rede, busca só até o dia anterior e descarte de linhas fora do período pedido;
   - retentativas: 3 tentativas com intervalo de 10 s;
   - `run_extraction`: falha de uma série sem interromper as outras, um arquivo de log por execução e o fluxo completo.
 - **`tests/test_transform.py`:** silver: esquema e tipos do parquet, conversão de cada série, índices acumulados, união da bronze com deduplicação pela ingestão mais recente, ordenação, sem preenchimento de dias, descarte de valores inválidos e série ausente.

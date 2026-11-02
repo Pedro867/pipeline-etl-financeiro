@@ -116,6 +116,7 @@ Chamada usada para explorar a fonte: `yf.download("^BVSP", start=..., end=..., a
 | `Adj Close` vs `Close` | Iguais no `^BVSP` (índice não tem dividendos nem desdobramentos). |
 | `end` | É **exclusivo**: para incluir o dia D, é preciso passar D+1. |
 | Dia corrente | Se o pregão do dia ainda não fechou, vem uma linha **parcial**: valores intradiários que ainda mudam e `Volume = 0`. |
+| Período sem pregão | Pedindo só um fim de semana (ex.: 31/10 a 01/11/2026), o Yahoo pode devolver o **último pregão anterior** (30/10), com valores provisórios e `Volume = 0`, fora do período pedido. O `fetch_yfinance` descarta essas linhas. |
 | Avisos | O yfinance 1.7.0 emite `Pandas4Warning` (uso de `inplace`). Não afeta os dados. |
 
 **Fuso horário:** o `Ticker.history` (a função adotada) devolve o índice **com fuso** (`America/Sao_Paulo` no `^BVSP`), diferente do `yf.download`, que devolve sem fuso. Na conversão para JSON, isso precisa ser levado em conta para a data não mudar.
@@ -275,7 +276,7 @@ As métricas 1.6 (base 100), 2.7 (simulação de R$ 1.000.000,00) e 3.3 (drawdow
 - **`juros_reais`:** sem 12 meses de IPCA no histórico, os campos do IPCA e o spread ficam vazios.
 - **Série ausente na silver:** as tabelas que dependem dela são puladas, com aviso no log. Uma falha na gold vai para o log da execução e não afeta a bronze nem a silver.
 
-**Qualidade da fonte (yfinance):** o fechamento do Ibovespa em 29/12/2022 no Yahoo é **110.031**, e o oficial da B3 é de cerca de **109.735**. Por isso, o `retorno_anual` do Ibovespa sai **4,97%** em 2022 (oficial ≈ 4,69%) e **21,95%** em 2023 (oficial ≈ 22,28%). Os fechamentos de 2021, 2023 e 2024 conferem. O cálculo está correto; a diferença vem do dado da fonte.
+**Qualidade da fonte (yfinance):** o fechamento do Ibovespa em 29/12/2022 no Yahoo é **110.031**, e o oficial é **109.734,60** (−0,46% no dia; confirmado em 02/11/2026 por Bloomberg Línea, IstoÉ Dinheiro e Correio Braziliense). O valor do Yahoo é praticamente a prévia do fim da tarde (110.054 às 18:06), nunca substituída pelo fechamento oficial; o BOVA11 caiu 0,80% no dia, o que confirma a queda maior. Por isso, o `retorno_anual` do Ibovespa sai **4,97%** em 2022 (oficial ≈ 4,69%) e **21,95%** em 2023 (oficial ≈ 22,28%). Os fechamentos de 2021, 2023 e 2024 conferem. O cálculo está correto; a diferença vem do dado da fonte. **Decisão (02/11/2026): manter o dado do Yahoo e documentar**, sem correção manual. O erro afeta só o retorno anual do Ibovespa em 2022 e 2023.
 
 ---
 
@@ -360,6 +361,8 @@ As métricas 1.6 (base 100), 2.7 (simulação de R$ 1.000.000,00) e 3.3 (drawdow
 | 2026-11-01 | Simulação de R$ 1.000.000,00: o IPCA deixa de aparecer como investimento e vira **"Corrigido pelo IPCA"**, ou seja, R$ 1.000.000,00 × (1 + IPCA do período): o valor que o montante inicial precisaria ter hoje só para manter o poder de compra. | Comparar R$ 1.000.000,00 "investidos no IPCA" não faz sentido. O valor corrigido serve de régua para os outros três cartões. | ✅ |
 | 2026-11-01 | Dashboard publicado no Streamlit Community Cloud: **https://pipeline-etl-financeiro.streamlit.app/**, com acesso público. | Acesso pela equipe por um link, sem precisar rodar nada localmente. | ✅ |
 | 2026-11-02 | Dashboard: o **Resumo** vira uma seção expansível (`st.expander`), aberta por padrão. A **Análise por período** continua como cabeçalho (revisto no mesmo dia: chegou a ser expansível também). | Quem quiser pode recolher o Resumo e ir direto à análise por período. | ✅ |
+| 2026-11-02 | `fetch_yfinance` descarta linhas com data fora do período pedido. O arquivo `data/raw/ibovespa/ibovespa_20261101.json`, que só tinha a linha provisória de 30/10 fora do período, foi removido da bronze (continua no histórico do Git). | Pedindo um fim de semana, o Yahoo devolveu o pregão anterior provisório, que substituiu na silver o valor consolidado já salvo. | ✅ |
+| 2026-11-02 | Fechamento do Ibovespa de 29/12/2022 no Yahoo (prévia, e não o oficial): **manter e documentar**, sem tabela de correções manuais. | O erro (0,27% naquele dia) afeta só o retorno anual de 2022 e 2023. Uma correção manual exigiria manutenção. | ✅ |
 | 2026-10-28 | A saída do terminal das execuções do cron é descartada (`> /dev/null 2>&1`). | Os erros de extração já ficam em `log/`. | ✅ |
 | 2026-10-28 | `requirements.txt` gerado de novo com as dependências **importadas diretamente** pelo código e pelos testes, todas com versão fixa: `pyspark`, `requests`, `pytest`, `yfinance`, `pandas` e `curl_cffi`. | `pandas` e `curl_cffi` vinham só como dependências do yfinance, mas passaram a ser importados direto pelo código: `pandas` na conversão para JSON e `curl_cffi` na detecção dos erros de rede do yfinance. | ✅ |
 | 2026-10-28 | Os itens pendentes da Fase 0 (estudo dos indicadores, unidades e limites das fontes, calendários) ficam para depois que a camada silver estiver pronta. | Escolha do responsável pelo projeto. | ✅ |

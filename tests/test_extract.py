@@ -303,6 +303,30 @@ def test_fetch_yfinance_single_day_period(fake_ticker):
     assert calls[0]["start"] == date(2026, 10, 27)
 
 
+def test_fetch_yfinance_drops_rows_outside_requested_period(fake_ticker):
+    fake_ticker(make_history(["2026-10-30", "2026-10-31"]))
+
+    records = extract.fetch_yfinance("^BVSP", date(2026, 10, 31), date(2026, 11, 1))
+
+    assert [r["Date"] for r in records] == ["2026-10-31"]
+
+
+def test_fetch_yfinance_weekend_returning_only_previous_session_gives_empty_list(fake_ticker):
+    # Observado em 01/11/2026: pedindo a partir de sábado (31/10), o Yahoo devolveu só a linha
+    # provisória de sexta (30/10), fora do período pedido.
+    fake_ticker(make_history(["2026-10-30"]))
+
+    assert extract.fetch_yfinance("^BVSP", date(2026, 10, 31), date(2026, 11, 1)) == []
+
+
+def test_fetch_yfinance_drops_rows_on_or_after_end(fake_ticker):
+    fake_ticker(make_history(["2026-10-29", "2026-10-30"]))
+
+    records = extract.fetch_yfinance("^BVSP", date(2026, 10, 29), date(2026, 10, 30))
+
+    assert [r["Date"] for r in records] == ["2026-10-29"]
+
+
 def test_fetch_yfinance_no_trading_session_returns_empty_list(fake_ticker, sleeps):
     calls = fake_ticker(YFPricesMissingError("^BVSP", "(1d 2026-10-24 -> 2026-10-26)"))
 
