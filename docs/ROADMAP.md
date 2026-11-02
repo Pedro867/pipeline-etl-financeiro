@@ -4,15 +4,15 @@
 >
 > **Nenhuma decisão é tomada sem aprovação.** Os itens marcados como 🔶 *Decisão pendente* listam apenas perguntas e opções em aberto — não representam escolhas feitas.
 
-**Legenda:** ⬜ não iniciado · 🔄 em andamento · ✅ concluído · 🔶 decisão pendente
+**Legenda:** ⬜ não iniciado · 🔄 em andamento · ✅ concluído · 🔶 decisão pendente · ⏸️ adiado
 
 ---
 
-## Fase 0 — Entendimento dos dados ⬜
+## Fase 0 — Entendimento dos dados ⏸️
 
 Objetivo: entender cada indicador antes de manipulá-lo.
 
-> ⏸️ **Adiada:** os itens pendentes desta fase serão retomados quando a camada silver estiver pronta (decisão de 28/10/2026).
+> ⏸️ **Adiada:** os itens pendentes desta fase seriam retomados quando a camada silver estivesse pronta (decisão de 28/10/2026). A silver ficou pronta em 29/10/2026; falta decidir quando retomar.
 
 - ⬜ Estudar cada série: significado, forma de cálculo, uso no dia a dia de um assessor de investimentos e formas usuais de apresentação.
   - ⬜ CDI
@@ -26,18 +26,18 @@ Objetivo: entender cada indicador antes de manipulá-lo.
   - ✅ Linha parcial do pregão em andamento: o fluxo diário roda depois do fechamento do pregão.
     - ✅ Sem proteção extra por enquanto: basta o agendamento. Uma execução manual durante o pregão salva a linha parcial, que só é corrigida se o fluxo rodar de novo no mesmo dia, depois do fechamento.
   - ✅ Verificar a queda de cerca de 14% do Ibovespa em 26/10/2026: é um evento real, confirmado por fontes independentes.
-  - ⬜ Na conversão para JSON, considerar o fuso horário do índice do `Ticker.history`.
-- ⬜ Verificar o formato de retorno, unidades e limitações das fontes (API SGS e `yfinance`).
-- ⬜ Mapear diferenças de calendário entre as séries (dias úteis BCB, pregões B3, divulgação mensal do IPCA).
+  - ✅ Na conversão para JSON, considerar o fuso horário do índice do `Ticker.history`: `dataframe_to_json` usa a data local do pregão, com testes.
+- ✅ Verificar o formato de retorno, unidades e limitações das fontes (API SGS e `yfinance`): documentado no [CONTEXT.md](CONTEXT.md#api-sgs-banco-central), inclusive o mapa de erros e a janela máxima de 10 anos do SGS.
+- 🔄 Mapear diferenças de calendário entre as séries (dias úteis BCB, pregões B3, divulgação mensal do IPCA): o tratamento está decidido e implementado (cada série no próprio calendário; IPCA pelo mês de referência), mas não há um mapeamento dos feriados que não coincidem.
 
-## Fase 1 — Definições de arquitetura 🔶
+## Fase 1 — Definições de arquitetura 🔄
 
 Todas as decisões abaixo dependem de aprovação.
 
 - ✅ Estrutura de pastas (ver registro de decisões em [CONTEXT.md](CONTEXT.md#registro-de-decisões)).
 - ✅ Linguagem e dependências: Python com pandas (transformação), pyarrow (parquet), requests, yfinance, curl_cffi e pytest (`requirements.txt` + `.venv`). O PySpark foi substituído pelo pandas em 29/10/2026.
 - ✅ Formato da base de carga: parquet.
-- 🔶 Modelagem dos dados (granularidade, tabelas/arquivos brutos vs. tratados).
+- ✅ Modelagem dos dados: bronze (JSON por execução), silver e gold (parquet). Ver [CONTEXT.md, seção 6](CONTEXT.md#6-esquema-das-tabelas-tratadas-parquet).
 - ✅ Ferramenta do dashboard: **Streamlit** (decisão de 01/11/2026).
 - ✅ Forma de execução do pipeline, a partir da raiz do projeto: `python -m src.main_daily` (séries diárias) e `python -m src.main_monthly` (IPCA).
 - ✅ Agendamento: **GitHub Actions** (`.github/workflows/pipeline.yml`), substituindo o crontab em 01/11/2026.
@@ -45,11 +45,14 @@ Todas as decisões abaixo dependem de aprovação.
   - ✅ `data/` e `log/` versionados no repositório; o workflow faz o commit ao fim de cada execução.
   - ✅ Botão de execução manual (`workflow_dispatch`), com escolha do fluxo.
   - ✅ Crontab local desativado: as linhas foram comentadas com `# DESATIVADO (GitHub Actions)`.
-  - ⬜ Fazer commit e push do workflow e de `data/`/`log/` e confirmar a primeira execução no GitHub (manual e agendada).
+  - ✅ Commit e push do workflow e de `data/`/`log/`. Primeira execução manual em 01/11/2026 com sucesso (sem dado novo, por ser domingo).
+  - ⬜ Confirmar a primeira execução **agendada** e o primeiro commit automático de `github-actions[bot]`.
   - ⬜ Nos primeiros dias, conferir nos arquivos se a execução das 09:17 já traz o CDI de D-1 e o Ibovespa de D-1 consolidado.
   - ⬜ Acompanhar o `YFRateLimitError` do Yahoo nos servidores do GitHub.
   - ✅ O pipeline termina com código de saída 1 quando alguma série falha na extração ou a transformação falha. O GitHub marca a execução como falha e avisa por e-mail. O fluxo mensal e o commit dos dados rodam mesmo assim.
-## Fase 2 — Extração (E) ✅
+  - ✅ Badge do workflow no topo do README.
+
+## Fase 2 — Extração (E) 🔄
 
 - ✅ `fetch_sgs` em `src/extract.py` (genérica, recebe o código SGS e o período).
 - ✅ `fetch_yfinance` em `src/extract.py` (chama a conversão do `utils.py` e retorna JSON, como o `fetch_sgs`).
@@ -71,7 +74,7 @@ Todas as decisões abaixo dependem de aprovação.
   - ✅ Retentar só os erros passageiros (coluna "Retentar?" do mapa).
   - ✅ Se todas as tentativas falharem, registrar o erro em log e seguir para as outras séries.
   - ✅ Usar `yf.Ticker(...).history(..., raise_errors=True)` no yfinance.
-- ✅ Registrar os erros em arquivos de log na pasta `log/` da raiz do projeto (fora do Git), criada pelo pipeline se não existir.
+- ✅ Registrar os erros em arquivos de log na pasta `log/` da raiz do projeto, criada pelo pipeline se não existir (versionada desde 01/11/2026).
   - ✅ Um arquivo por execução, com a data e a hora do início no nome. Cada linha traz a hora do erro e a série.
   - ✅ Nome com o fluxo: `log/daily_YYYYMMDD_HHMMSS.log` e `log/monthly_YYYYMMDD_HHMMSS.log`.
   - ✅ O arquivo só é criado quando a execução tem erro.
@@ -81,7 +84,8 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ IPCA: como o SGS devolve o mês que **contém** a data inicial, na série mensal a busca começa no 1º dia do mês seguinte ao último dado.
 - ✅ Ibovespa: a busca vai só **até ontem**, porque a linha do dia atual vem provisória mesmo depois do fechamento.
 - ✅ Testes automatizados com pytest em `tests/` (201 testes, sem acesso à internet): `pytest` a partir da raiz.
-- ✅ Horário de execução: fluxo diário todos os dias às 09:00, com todas as séries em D-1. IPCA nos dias 8 a 20, às 10:00. A saída do terminal é descartada.
+- ✅ Horário de execução: fluxo diário todos os dias às 09:17 de Brasília, com todas as séries em D-1; IPCA nos dias 8 a 20, às 10:17 (GitHub Actions; ver Fase 1).
+- 🔶 Ibovespa salvo ainda provisório: em 01/11/2026 a linha de 30/10 (sexta) foi salva com `Volume = 0`, porque o Yahoo ainda não tinha consolidado o dado. Opções em aberto: janela de sobreposição na carga incremental, descartar linhas com `Volume = 0` ou manter como está.
 
 ## Fase 3 — Transformação (T) ✅
 
@@ -112,11 +116,11 @@ Todas as decisões abaixo dependem de aprovação.
   - ✅ Esquema final das tabelas: ver [CONTEXT.md, seção 6](CONTEXT.md#6-esquema-das-tabelas-tratadas-parquet).
 - ⬜ Documentar cada decisão no README.
 
-## Fase 4 — Carga (L) ⬜
+## Fase 4 — Carga (L) ✅
 
-- ⬜ Criar `data/raw/` e `data/processed/` caso não existam (a pasta `data/` não é versionada).
-- ⬜ Salvar os dados tratados no formato aprovado na Fase 1.
-- ⬜ Garantir que a base alimenta o dashboard.
+- ✅ Criar `data/raw/` e `data/processed/` caso não existam: `save_json` e a gravação dos parquet criam as pastas.
+- ✅ Salvar os dados tratados no formato aprovado na Fase 1: parquet com pyarrow, em `data/processed/silver/` e `data/processed/gold/`.
+- ✅ Garantir que a base alimenta o dashboard: o dashboard lê a gold versionada no repositório.
 
 ## Fase 5 — Dashboard 🔄
 
@@ -129,14 +133,14 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Ajustes de 01/11/2026: o Resumo virou a parte fixa do topo, e o filtro passou a valer só para as abas abaixo dele. Na simulação, o IPCA virou "Corrigido pelo IPCA".
 - 🔶 Outros ajustes de conteúdo e layout.
 
-## Fase 6 — Documentação ⬜
+## Fase 6 — Documentação 🔄
 
 - ⬜ README com:
-  - ⬜ Como executar o pipeline e o dashboard.
+  - ✅ Como executar o pipeline e o dashboard (seções "Como executar", "Agendamento" e "Dashboard").
   - ⬜ Decisões de transformação e suas justificativas.
   - ⬜ Para quem é o dashboard e por que as visualizações atendem esse público.
 
-## Fase 7 — Atualização incremental ⬜
+## Fase 7 — Atualização incremental ✅
 
-- 🔶 Estratégia para baixar apenas dados novos a cada execução.
-- ⬜ Implementação e validação.
+- ✅ Estratégia para baixar apenas dados novos a cada execução: carga completa de 5 anos na primeira vez e, depois, a partir do dia seguinte ao último dado salvo (1º dia do mês seguinte no IPCA). Ver Fase 2.
+- ✅ Implementação e validação: `get_start_date` em `src/utils.py`, com testes. Em produção desde 28/10/2026, primeiro no crontab e depois no GitHub Actions.
