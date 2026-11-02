@@ -171,8 +171,7 @@ pipeline-etl-financeiro/
 ├── src/
 │   ├── __init__.py
 │   ├── extract.py      # extração (E)
-│   ├── transform.py    # transformação (T): silver e gold
-│   ├── load.py         # carga (L)
+│   ├── transform.py    # transformação (T) e carga (L): silver e gold em parquet
 │   ├── utils.py        # funções auxiliares (ex.: salvar arquivos)
 │   ├── main_daily.py   # ponto de entrada: séries diárias
 │   └── main_monthly.py # ponto de entrada: série mensal (IPCA)
