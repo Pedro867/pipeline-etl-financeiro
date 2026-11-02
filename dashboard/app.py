@@ -28,6 +28,34 @@ WINDOWS = {"mes": "Mês", "ano": "Ano", "12m": "12M", "24m": "24M", "36m": "36M"
 MONTHS_PT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
 DATE_COLUMNS = ["data", "data_inicio", "data_fim", "mes_referencia", "data_ultimo_dado", "data_referencia", "mes_referencia_ipca"]
 SIMULATED_AMOUNT = 1_000_000
+# Texto do "?" de cada cartão do Resumo: o que é o indicador, quem calcula, como é usado e o que o número mostra.
+HELP = {
+    "cdi": (
+        "Taxa média dos empréstimos de um dia entre bancos, calculada pela B3 a cada dia útil. "
+        "Acompanha de perto a Selic, cerca de 0,10 p.p. abaixo da meta.\n\n"
+        "É a principal referência da renda fixa pós-fixada: CDBs, LCIs, LCAs e fundos são comparados em \"% do CDI\".\n\n"
+        "Aqui: taxa diária do último dia útil, anualizada em 252 dias úteis."
+    ),
+    "ipca": (
+        "Inflação oficial do Brasil, calculada pelo IBGE todo mês a partir dos preços de uma cesta de produtos e "
+        "serviços consumidos por famílias com renda de 1 a 40 salários mínimos.\n\n"
+        "Mostra a perda do poder de compra e é a base da rentabilidade real (o ganho acima da inflação).\n\n"
+        "Aqui: inflação acumulada nos 12 últimos meses divulgados."
+    ),
+    "dolar_ptax": (
+        "Taxa de câmbio de referência do Banco Central, em reais por dólar. É a média de quatro consultas que o "
+        "Banco Central faz aos grandes bancos ao longo do dia, no mercado atacadista; não é o dólar turismo.\n\n"
+        "Serve de referência para contratos, proteção cambial (hedge) e investimentos internacionais.\n\n"
+        "Aqui: PTAX de venda, com a variação em relação ao dia útil anterior."
+    ),
+    "ibovespa": (
+        "Principal índice de ações da B3: uma carteira teórica das ações mais negociadas, com peso pelo valor de "
+        "mercado das ações em circulação (free float) e rebalanceada a cada 4 meses.\n\n"
+        "É um índice de retorno total: considera o reinvestimento dos dividendos. "
+        "É a referência para ações e fundos de ações.\n\n"
+        "Aqui: fechamento em pontos, com a variação em relação ao pregão anterior."
+    ),
+}
 
 
 # Formatação no padrão brasileiro
@@ -184,17 +212,17 @@ ipca_idx = ipca_index(ipca)
 with st.expander("**Resumo**", expanded=True):
     cols = st.columns(4)
     cols[0].metric("CDI anualizado", fmt_pct(real_rates["cdi_anualizado_pct"], signed=False), border=True,
-                   help="Taxa diária do CDI anualizada em 252 dias úteis.")
+                   help=HELP["cdi"])
     cols[0].caption(f"Dado de {fmt_date(real_rates['data_referencia'])}")
     cols[1].metric("IPCA 12 meses", fmt_pct(real_rates["ipca_12m_pct"], signed=False), border=True,
-                   help="Inflação acumulada nos 12 últimos meses divulgados pelo IBGE.")
+                   help=HELP["ipca"])
     cols[1].caption(f"Até {fmt_month(real_rates['mes_referencia_ipca'])}")
     last_ptax, last_ibov = ptax.iloc[-1], ibov.iloc[-1]
     cols[2].metric("Dólar PTAX venda", fmt_brl(last_ptax["ptax_venda"], 4), fmt_pct(last_ptax["var_d1_pct"]),
-                   delta_color="off", border=True, help="Variação em relação ao dia útil anterior.")
+                   delta_color="off", border=True, help=HELP["dolar_ptax"])
     cols[2].caption(f"Dado de {fmt_date(last_ptax['data'])}")
     cols[3].metric("Ibovespa", f"{fmt_num(last_ibov['fechamento'], 0)} pts", fmt_pct(last_ibov["var_d1_pct"]),
-                   border=True, help="Variação em relação ao pregão anterior.")
+                   border=True, help=HELP["ibovespa"])
     cols[3].caption(f"Fechamento de {fmt_date(last_ibov['data'])}")
 
     st.subheader("Rentabilidade nominal")
@@ -372,7 +400,9 @@ with tab_stocks:
         "% do CDI": nominal_rows["pct_do_cdi"].map(lambda v: "—" if pd.isna(v) else f"{fmt_num(v, 0)}%").values,
         "Retorno real": real_rows["retorno_pct"].map(fmt_pct).values,
     }), hide_index=True)
-    st.caption("% do CDI só aparece quando os dois retornos são positivos. O retorno real vai até o último IPCA divulgado.")
+    st.caption("O Ibovespa é um índice de retorno total (considera o reinvestimento dos dividendos), então a comparação "
+               "com o CDI é justa. % do CDI só aparece quando os dois retornos são positivos. O retorno real vai até o "
+               "último IPCA divulgado.")
 
 # Câmbio
 with tab_fx:

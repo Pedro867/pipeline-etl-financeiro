@@ -8,17 +8,15 @@
 
 ---
 
-## Fase 0 — Entendimento dos dados ⏸️
+## Fase 0 — Entendimento dos dados 🔄
 
 Objetivo: entender cada indicador antes de manipulá-lo.
 
-> ⏸️ **Adiada:** os itens pendentes desta fase seriam retomados quando a camada silver estivesse pronta (decisão de 28/10/2026). A silver ficou pronta em 29/10/2026; falta decidir quando retomar.
-
-- ⬜ Estudar cada série: significado, forma de cálculo, uso no dia a dia de um assessor de investimentos e formas usuais de apresentação.
-  - ⬜ CDI
-  - ⬜ IPCA
-  - ⬜ Dólar PTAX venda
-  - ⬜ Ibovespa
+- ✅ Estudar cada série: significado, forma de cálculo, uso no dia a dia de um assessor de investimentos e formas usuais de apresentação (02/11/2026; ver [CONTEXT.md](CONTEXT.md#o-que-cada-indicador-representa)).
+  - ✅ CDI
+  - ✅ IPCA
+  - ✅ Dólar PTAX venda
+  - ✅ Ibovespa
 - ✅ Pesquisar e confirmar os códigos das séries no SGS: CDI = 12, IPCA = 433, PTAX venda = 1.
 - ✅ Definir o período de extração: data atual menos 5 anos até a data atual.
   - ✅ Se o dia atual for 29/02, a data inicial é 28/02.
@@ -131,7 +129,7 @@ Todas as decisões abaixo dependem de aprovação.
 - ✅ Publicado no Streamlit Community Cloud: https://pipeline-etl-financeiro.streamlit.app/ (público, conferido em 01/11/2026).
 - ✅ Ajustes de 01/11/2026: o Resumo virou a parte fixa do topo, e o filtro passou a valer só para as abas abaixo dele. Na simulação, o IPCA virou "Corrigido pelo IPCA".
 - ✅ Ajuste de 02/11/2026: o Resumo virou seção expansível, aberta por padrão.
-- 🔶 Outros ajustes de conteúdo e layout.
+- ✅ Ajuste de 02/11/2026: o "?" dos cartões do Resumo explica cada indicador, e a aba Bolsa explica que o Ibovespa é de retorno total.
 
 ## Fase 6 — Documentação 🔄
 

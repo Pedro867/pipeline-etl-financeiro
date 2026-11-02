@@ -39,6 +39,19 @@ O **produto final é o dashboard**. Cada escolha sobre ele (gráficos, comparaç
 - As séries têm **frequências diferentes** (diárias e mensal) e **naturezas diferentes** (taxas, índices e cotações).
 - Os calendários também diferem: dias úteis do BCB vs. pregões da B3 (feriados podem não coincidir).
 - Como conciliar isso no tratamento e no dashboard **faz parte das decisões a serem tomadas** (pendente de aprovação).
+
+### O que cada indicador representa
+
+Estudo da Fase 0 (concluído em 02/11/2026). O dashboard usa um resumo deste texto no "?" de cada cartão do Resumo.
+
+| Indicador | O que é e como é calculado | Uso pelo assessor | Forma usual de apresentação |
+|---|---|---|---|
+| **CDI** | Taxa média das operações de um dia entre bancos, calculada pela B3 a cada dia útil. Acompanha de perto a Selic, ficando cerca de 0,10 p.p. abaixo da meta. | Régua da renda fixa pós-fixada (CDBs, LCIs, LCAs, CRIs, CRAs) e custo de oportunidade do capital do cliente. | Em % a.a. (ex.: 10,40% a.a.) ou como indexador de um produto (ex.: CDB a 115% do CDI). |
+| **IPCA** | Inflação oficial, calculada pelo IBGE todo mês a partir dos preços de uma cesta de produtos e serviços (alimentação, habitação, transportes, saúde, educação) nas principais regiões metropolitanas. Cobre famílias com renda de 1 a 40 salários mínimos. | Cálculo da rentabilidade real da carteira e estruturação de carteiras de longo prazo (Tesouro IPCA+, debêntures de infraestrutura). | Variação no mês, no ano ou em 12 meses (ex.: 4,5% em 12 meses); em produtos, somado a uma taxa prefixada (ex.: IPCA + 5,5% a.a.). |
+| **Ibovespa** | Carteira teórica das ações mais negociadas da B3, com peso pelo valor de mercado das ações em circulação (*free float*) e rebalanceada a cada 4 meses. É um índice de **retorno total**: considera o reinvestimento dos dividendos e proventos. | Referência para ações e fundos de ações, leitura do humor do mercado e da volatilidade da carteira. | Em pontos (ex.: 130.000 pontos), com a variação do pregão (ex.: +1,5%). |
+| **Dólar PTAX** | Taxa de câmbio de referência do Banco Central, no mercado atacadista (não é o dólar turismo). O BCB faz quatro consultas aos *dealers* ao longo do dia, descarta as cotações extremas em cada uma e publica a média das quatro. | Referência para derivativos de câmbio, proteção cambial (*hedge*) e liquidação de investimentos internacionais. | Cotação em reais por dólar, com compra e venda, em quatro casas decimais (ex.: PTAX venda R$ 5,0532). |
+
+Consequência para o pipeline: como o Ibovespa já considera o reinvestimento dos dividendos, a comparação com o CDI (que também acumula os rendimentos) é feita em bases iguais, sem somar proventos.
 ### API SGS (Banco Central)
 
 URL de consulta:
@@ -364,6 +377,8 @@ As métricas 1.6 (base 100), 2.7 (simulação de R$ 1.000.000,00) e 3.3 (drawdow
 | 2026-11-02 | `fetch_yfinance` descarta linhas com data fora do período pedido. O arquivo `data/raw/ibovespa/ibovespa_20261101.json`, que só tinha a linha provisória de 30/10 fora do período, foi removido da bronze (continua no histórico do Git). | Pedindo um fim de semana, o Yahoo devolveu o pregão anterior provisório, que substituiu na silver o valor consolidado já salvo. | ✅ |
 | 2026-11-02 | Fechamento do Ibovespa de 29/12/2022 no Yahoo (prévia, e não o oficial): **manter e documentar**, sem tabela de correções manuais. | O erro (0,27% naquele dia) afeta só o retorno anual de 2022 e 2023. Uma correção manual exigiria manutenção. | ✅ |
 | 2026-11-02 | O README documenta só as **principais decisões de tratamento** (seção "Tratamento dos dados"), as que mudam um número exibido no dashboard ou a forma de lê-lo, com um link para este registro. | Há dezenas de decisões; listar todas no README o deixaria longo demais para quem só quer entender os números. | ✅ |
+| 2026-11-02 | Estudo dos indicadores da Fase 0 (significado, cálculo, uso pelo assessor e forma de apresentação) registrado na seção 2, "O que cada indicador representa". | Conclui os itens pendentes de estudo da Fase 0 e serve de base para os textos do dashboard. | ✅ |
+| 2026-11-02 | Dashboard: o "?" de cada cartão do Resumo traz um texto mais completo sobre o indicador (o que é, quem calcula, como é usado e o que o número mostra). Na aba Bolsa, a legenda da comparação com o CDI explica que o Ibovespa é um índice de retorno total. | Ajuda quem não é da área a ler os números. Deixa claro que a comparação Ibovespa × CDI é feita em bases iguais. | ✅ |
 | 2026-10-28 | A saída do terminal das execuções do cron é descartada (`> /dev/null 2>&1`). | Os erros de extração já ficam em `log/`. | ✅ |
 | 2026-10-28 | `requirements.txt` gerado de novo com as dependências **importadas diretamente** pelo código e pelos testes, todas com versão fixa: `pyspark`, `requests`, `pytest`, `yfinance`, `pandas` e `curl_cffi`. | `pandas` e `curl_cffi` vinham só como dependências do yfinance, mas passaram a ser importados direto pelo código: `pandas` na conversão para JSON e `curl_cffi` na detecção dos erros de rede do yfinance. | ✅ |
 | 2026-10-28 | Os itens pendentes da Fase 0 (estudo dos indicadores, unidades e limites das fontes, calendários) ficam para depois que a camada silver estiver pronta. | Escolha do responsável pelo projeto. | ✅ |
