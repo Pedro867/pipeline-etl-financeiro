@@ -44,9 +44,10 @@ Todas as decisões abaixo dependem de aprovação.
   - ✅ Botão de execução manual (`workflow_dispatch`), com escolha do fluxo.
   - ✅ Crontab local desativado: as linhas foram comentadas com `# DESATIVADO (GitHub Actions)`.
   - ✅ Commit e push do workflow e de `data/`/`log/`. Primeira execução manual em 01/11/2026 com sucesso (sem dado novo, por ser domingo).
-  - ⬜ Confirmar a primeira execução **agendada** e o primeiro commit automático de `github-actions[bot]`.
-  - ⬜ Nos primeiros dias, conferir nos arquivos se a execução das 09:17 já traz o CDI de D-1 e o Ibovespa de D-1 consolidado.
-  - ⬜ Acompanhar o `YFRateLimitError` do Yahoo nos servidores do GitHub.
+  - ✅ Confirmar a primeira execução **agendada** e o primeiro commit automático de `github-actions[bot]`: execuções agendadas em 02, 03 e 04/11/2026, todas com sucesso e com commit automático (`195f626`, `be17ba9` e `877375c`).
+  - ✅ Nos primeiros dias, conferir nos arquivos se a execução diária traz o CDI de D-1 e o Ibovespa de D-1 consolidado: confirmado em 04/11/2026 (CDI de 03/11 e Ibovespa de 03/11 com fechamento 165.529 e volume preenchido). O horário das 09:17 não pôde ser conferido, porque as execuções atrasaram (ver item abaixo).
+  - 🔶 Atraso do agendamento: as execuções previstas para 09:17 rodaram às 18:42 (02/11), 16:29 (03/11) e 16:44 (04/11). Nada se perde, mas os dados só se atualizam no fim da tarde, e a PTAX passa a entrar no mesmo dia. Opções: manter assim ou usar um disparo externo (ex.: cron-job.org chamando a API do GitHub).
+  - 🔄 Acompanhar o `YFRateLimitError` do Yahoo nos servidores do GitHub: nenhuma ocorrência nas execuções de 02 a 04/11/2026.
   - ✅ O pipeline termina com código de saída 1 quando alguma série falha na extração ou a transformação falha. O GitHub marca a execução como falha e avisa por e-mail. O fluxo mensal e o commit dos dados rodam mesmo assim.
   - ✅ Badge do workflow no topo do README.
 
